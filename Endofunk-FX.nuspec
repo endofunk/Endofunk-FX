@@ -3,12 +3,12 @@
   <metadata>
     <id>Endofunk.FX</id>
     <version>0.1</version>
-    <title>Functional Programming for .Net</title>
+    <title>ƒ(x) : Functional Programming => .Net</title>
     <authors>Endofunk</authors>
     <owners>Endofunk</owners>
-    <licenseUrl>https://github.com/endofunk/Endofunk.FX/License.md</licenseUrl>
-    <projectUrl>https://github.com/endofunk/Endofunk.FX</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/endofunk/Endofunk.FX/images/endofunk.png</iconUrl>
+    <licenseUrl>https://github.com/endofunk/Endofunk-FX/License.md</licenseUrl>
+    <projectUrl>https://github.com/endofunk/Endofunk-FX</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/endofunk/Endofunk-FX/images/endofunk.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>More than a flirtation with all things functional.</description>
     <copyright>Copyright (c) ENDOFUNK</copyright>

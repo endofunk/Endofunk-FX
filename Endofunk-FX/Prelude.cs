@@ -9,8 +9,6 @@ using System.Text.RegularExpressions;
 namespace Endofunk.FX {
   public enum Unit { } // functional void
 
-  // macOS: alt-f
-  // Windows: ctrl-alt f
   public static partial class Prelude {
 
     #region Stream

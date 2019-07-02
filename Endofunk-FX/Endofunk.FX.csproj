@@ -13,4 +13,7 @@ A library to enable a more functional style of programming in C#</Description>
   <ItemGroup>
     <Folder Include="DataTypes\" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove=".gitignore" />
+  </ItemGroup>
 </Project>
