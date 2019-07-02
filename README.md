@@ -1,2 +1,2 @@
 # Endofunk.FX
- ƒ(x) : (Functional Programming) => .NET
+ ƒ(x) : Functional Programming => .NET
