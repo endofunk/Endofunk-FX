@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Description>Functional Programming - Data
+--------------------------------
+A library to enable a more functional style of programming in C#</Description>
+    <AssemblyName>Endofunk.FX.Data</AssemblyName>
+    <RootNamespace>Endofunk.FX.Data</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " />
+  <ItemGroup>
+    <PackageReference Include="System.Data.SQLite" Version="1.0.111" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Endofunk-FX\Endofunk.FX.csproj" />
+  </ItemGroup>
+</Project>

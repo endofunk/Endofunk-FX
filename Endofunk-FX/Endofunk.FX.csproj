@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Description>Functional Programming
+----------------------------------
+A library to enable a more functional style of programming in C#</Description>
+    <RootNamespace>Endofunk.FX</RootNamespace>
+    <AssemblyName>Endofunk.FX</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " />
+  <ItemGroup>
+    <Folder Include="DataTypes\" />
+  </ItemGroup>
+</Project>
