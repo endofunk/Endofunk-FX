@@ -1,6 +1,6 @@
 [![Platform](https://img.shields.io/badge/Platforms-Windows%20%7C%20Android%20%7CmacOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-4E4E4E.svg?colorA=28a745)](#Platform-Support)
 
-[![dotnet support](https://img.shields.io/badge/dotnet-Core2.2+%20%-lightgrey.svg?colorA=28a745&colorB=4E4E4E)](#.NET-versions-support)
+[![dotnet-support](https://img.shields.io/badge/dotnet-Core2.2+%20%-lightgrey.svg?colorA=28a745&colorB=4E4E4E)](#.NET-versions-support)
 
 [![Twitter](https://img.shields.io/badge/Twitter-@codefunctor-blue.svg?style=flat)](http://twitter.com/codefunctor)
 
