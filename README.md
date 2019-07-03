@@ -1,10 +1,4 @@
-<table border="0">
-  <tr>
-    <td width="100%" align="center">
-      <img src="https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.fx.png" width="128"></img>
-    </td>
-  </tr>
-</table>
+<img src="https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.fx.png" width="256"></img>
 
 [![Platform](https://img.shields.io/badge/Platforms-Windows%20%7C%20Android%20%7CmacOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-4E4E4E.svg?colorA=28a745)](#Platform-Support)
 
