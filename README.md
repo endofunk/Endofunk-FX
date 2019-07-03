@@ -1,4 +1,10 @@
-![](https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.fx.png)
+<table border="0">
+  <tr>
+    <td width="100%" align="center">
+      <img src="https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.fx.png" width="128"></img>
+    </td>
+  </tr>
+</table>
 
 [![Platform](https://img.shields.io/badge/Platforms-Windows%20%7C%20Android%20%7CmacOS%20%7C%20iOS%20%7C%20watchOS%20%7C%20tvOS%20%7C%20Linux-4E4E4E.svg?colorA=28a745)](#Platform-Support)
 
@@ -6,7 +12,6 @@
 
 ![](https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.png)
 
-# Endofunk.FX
 This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
 Secondly we have a goal to provide existing functional API wrappers frequently used .NET Core functonality;  `Endofunc.Net` and `EndoFunc.Data` are the first two functional API wrapperss for Web, SQLite and SqlClient connections respectively. 
