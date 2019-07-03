@@ -2,6 +2,8 @@
 
 [![Twitter](https://img.shields.io/badge/Twitter-@codefunctor-blue.svg?style=flat)](http://twitter.com/codefunctor)
 
+![](https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Images/endofunk.png)
+
 # Endofunk.FX
 This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
