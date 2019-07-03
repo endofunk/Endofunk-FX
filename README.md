@@ -3,7 +3,7 @@
 [![Twitter](https://img.shields.io/badge/Twitter-@codefunctor-blue.svg?style=flat)](http://twitter.com/codefunctor)
 
 # Endofunk.FX
-This library provide a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
+This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
 Secondly we have a goal to provide existing functional API wrappers frequently used .NET Core functonality;  `Endofunc.Net` and `EndoFunc.Data` are the first two functional API wrapperss for Web, SQLite and SqlClient connections respectively. 
 
