@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <ReleaseVersion>0.2</ReleaseVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -13,6 +14,6 @@
     <DebugType></DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Endofunk.FX\Endofunk.FX.csproj" />
+    <PackageReference Include="endofunk.fx" Version="0.2.0" />
   </ItemGroup>
 </Project>

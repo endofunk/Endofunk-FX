@@ -2,15 +2,29 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <Description>Functional Programming - Networking
---------------------------------------
-A library to enable a more functional style of programming in C#</Description>
+    <PackageVersion>0.2</PackageVersion>
+    <Authors>endofunk</Authors>
+    <PackageId>Endofunk.FX.Web</PackageId>
+    <Description>A companion library to Endofunk.FX providing functional wrappers around:
+- System.Net
+- Newtonsoft.Json</Description>
+    <Copyright>Copyright (c) endofunk</Copyright>
+    <PackageIconUrl>https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Endofunk-FX/images/endofunk.png</PackageIconUrl>
+    <Owners>endofunk</Owners>
+    <PackageProjectUrl>https://github.com/endofunk/Endofunk-FX</PackageProjectUrl>
+    <Title>System.Web companion library for EndoFunk.FX</Title>
+    <Summary>Functional wrapper for System.Web and Newtonsoft.Json</Summary>
+    <PackageReleaseNotes>Initial Release</PackageReleaseNotes>
+    <PackageTags>C#, Functional, Functional Programming, JSON</PackageTags>
+    <ReleaseVersion>0.2</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Endofunk-FX\Endofunk.FX.csproj" />
+    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.5-dev.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Endofunk.FX" Version="0.2.0" />
   </ItemGroup>
 </Project>
