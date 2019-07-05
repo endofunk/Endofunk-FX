@@ -7,7 +7,7 @@
 This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
 # Functional Data Types
-The following is an incompete list of the functional data types including in `Endofunc.FX`. 
+The following is an incompete list of the functional data types included in `Endofunc.FX`. 
 
 | Type  | Overview |
 |-------|----------|
@@ -23,10 +23,10 @@ The following is an incompete list of the functional data types including in `En
 | Tagged | The Tagged union type is comparable to Swift enums with generically associated values. |
 | Store | The Store is modelled on the Redux concept. |
 | Reducer | The Reducer is modelled on the Redux concept. |
-| Subscriber | The Suscriber is modell on the Redux concept. |
+| Subscriber | The Suscriber is modelled on the Redux concept. |
 | *Action* | The Tagged type fulfills the role of the Action in the Redux concept. |
 
-All types are Functor, Applicative Functor and Monad enabled; with monadic and applicative lifters. Kleisli monadic composition has been enabled on all monadic types, and are Linq enabled.
+All types are `Functor`, `Applicative Functor` and `Monad` enabled; with `monadic lifters` and `applicative lifters`. `Kleisli monadic composition` has been enabled on all monadic types, and `Linq` is enabled.
 
 Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
 
