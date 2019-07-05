@@ -6,6 +6,31 @@
 
 This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
+## Data Type
+| Type  | Overview |
+|-------|----------|
+| Identity | The Identity type is a trivial type to access functor, monad, applicative functor, etc. algebras. | 
+| Maybe | The Maybe type encapsulates an optional value. A value of type Maybe a either contains a value of type a (represented as Just a), or it is empty (represented as Nothing)|
+| Either| The Either type encapsulates a disjunction of two possibilities: either Left or Right. |
+| Result | The Result type is similar to the Either type except that the left disjunction is fixed to capture of a C# Exception. |
+| Validation | The Validation data type is isomorphic to Either, but has an instance of Applicative that accumulates on the error side. |
+| Reader | The Reader type (also called the Environment monad). Represents a computation, which can read values from a shared environment, pass values from function to function, and execute sub-computations in a modified environment. |
+| Writer | The Writer type is parameterized by some monoidal type. Its main job is to keep track of an accumulated value of this type.|
+| State |  The State monad wraps computations in the context of reading and modifying a global state object. |
+| Coyoneda | The Coyoneda is a contravariant Functor suitable for Yoneda reduction. |
+| Yoneda | The yoneda is a covariant Functor suitable for Yoneda reduction. |
+| Tagged | The Tagged union type is comparable to Swift enums with generically associated values. |
+| Store | The Store is modelled on the Redux concept. |
+| Reducer | The Reducer is modelled on the Redux concept. |
+| Subscriber | The Suscriber is modell on the Redux concept. |
+| *Action* | The Tagged type fulfills the role of the Action in the Redux concept. |
+
+All types are Functor, Applicative Functor and Monad enabled; with monadic and applicative lifters. Kleisli monadic composition has been enabled on all monadic types, and are Linq enabled.
+
+Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
+
+This documentation is a work in progress and will be significantly enhanced as part of the firming up of the API, the data types and the usage examples for each data type. 
+
 Secondly we have a goal to provide existing functional API wrappers frequently used .NET Core functonality;  `Endofunc.Net` and `EndoFunc.Data` are the first two functional API wrapperss for Web, SQLite and SqlClient connections respectively. 
 
 Examples will be added in due course to demonstrate how these APIs can be used to simplify and crash proof your code without sacrificing features.
