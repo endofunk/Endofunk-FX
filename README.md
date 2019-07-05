@@ -6,7 +6,9 @@
 
 This library provides a functional-programming core library: `Endofunk.FX`, that adds many of the data types needed for exploiting a functional programming style in your codebase; more data types will be added in due course.
 
-## Data Type
+# Functional Data Types
+The following is an incompete list of the functional data types including in `Endofunc.FX`. 
+
 | Type  | Overview |
 |-------|----------|
 | Identity | The Identity type is a trivial type to access functor, monad, applicative functor, etc. algebras. | 
@@ -15,7 +17,6 @@ This library provides a functional-programming core library: `Endofunk.FX`, that
 | Result | The Result type is similar to the Either type except that the left disjunction is fixed to capture of a C# Exception. |
 | Validation | The Validation data type is isomorphic to Either, but has an instance of Applicative that accumulates on the error side. |
 | Reader | The Reader type (also called the Environment monad). Represents a computation, which can read values from a shared environment, pass values from function to function, and execute sub-computations in a modified environment. |
-| Writer | The Writer type is parameterized by some monoidal type. Its main job is to keep track of an accumulated value of this type.|
 | State |  The State monad wraps computations in the context of reading and modifying a global state object. |
 | Coyoneda | The Coyoneda is a contravariant Functor suitable for Yoneda reduction. |
 | Yoneda | The yoneda is a covariant Functor suitable for Yoneda reduction. |
@@ -28,6 +29,13 @@ This library provides a functional-programming core library: `Endofunk.FX`, that
 All types are Functor, Applicative Functor and Monad enabled; with monadic and applicative lifters. Kleisli monadic composition has been enabled on all monadic types, and are Linq enabled.
 
 Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
+
+# Future Plans
+- The `IO`, `Writer` and `Union` type monads are a work in progress. 
+- In addition to this `STAB` and `SA` Optics type covering `Lens` and `Prims` are also a work in progress and will be added shortly.  In future this may transition to `profunctor` optics.
+- I intend to explore adding functional extension methods to the C# 8.0 `Nullable` types to turn Nullable into a 1st class functional type similar to `Maybe`, and hopefully to also enabe smooth transforms between `value` and `class` element types.
+- Functional concurrency with `Task`, and/or `Promise / Future` types.
+- ...
 
 This documentation is a work in progress and will be significantly enhanced as part of the firming up of the API, the data types and the usage examples for each data type. 
 
