@@ -5,6 +5,7 @@ using Endofunk.FX;
 
 using static Endofunk.FX.Prelude;
 using static System.Console;
+using System.Net;
 
 namespace FPExamples {
 
@@ -126,6 +127,8 @@ namespace FPExamples {
       List(1, 2, 3)
         .Map(x => x + 1)
         .DebugPrint();
+
+      
 
       //Some(1)
       //  .Map(x => x + 2)

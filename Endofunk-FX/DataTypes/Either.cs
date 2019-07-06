@@ -56,6 +56,12 @@ namespace Endofunk.FX {
   public static partial class Prelude {
 
     #region Either - Fold
+    public static R2 FoldR<L, R, R2>(this Either<L, R> ts, R2 identity, Func<R2, R, R2> fn) {
+      var accumulator = identity;
+      foreach (R element in ts.AsEnumerable()) { accumulator = fn(accumulator, element); }
+      return accumulator;
+    }
+
     public static R2 Fold<L, R, R2>(this Either<L, R> e, Func<L, R2> left, Func<R, R2> right) => e.IsRight ? right(e.RValue) : left(e.LValue);
     #endregion
 

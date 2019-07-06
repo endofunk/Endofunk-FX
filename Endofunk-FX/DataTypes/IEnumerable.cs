@@ -52,6 +52,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
+    public static IEnumerable<R> LiftM<A, R>(this Func<A, R> @this, IEnumerable<A> a) => a.FlatMap(xa => List(@this(xa)));
     public static IEnumerable<R> LiftM<A, B, R>(this Func<A, B, R> @this, IEnumerable<A> a, IEnumerable<B> b) => a.FlatMap(xa => b.FlatMap(xb => List(@this(xa, xb))));
     public static IEnumerable<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => List(@this(xa, xb, xc)))));
     public static IEnumerable<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => List(@this(xa, xb, xc, xd))))));
@@ -109,7 +110,9 @@ namespace Endofunk.FX {
     public static IEnumerable<A> Skip2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((new List<A>(), 0), (a, e) => (a.Item2 >= quantity) ? (a.Item1.AddReturn(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
     #endregion
 
+    #region String
     public static string Join<A>(this IEnumerable<A> @this, string separator) => string.Join(separator, @this);
+    #endregion
 
     #region DebugPrint
     public static void DebugPrint<T>(this IEnumerable<T> ts, string title = "", string delimeter = "") {

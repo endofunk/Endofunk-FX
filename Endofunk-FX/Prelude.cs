@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using static System.Console;
 
 namespace Endofunk.FX {
   public enum Unit { } // functional void
@@ -13,10 +13,6 @@ namespace Endofunk.FX {
 
     #region Stream
     public static string ReadToEndOfStream(this Stream stream) => new StreamReader(stream).ReadToEnd();
-    #endregion
-
-    #region String
-    public static bool IsEmpty(this string @this) => @this.Length == 0;
     #endregion
 
     public static bool IsMultipleOf(this int n, int m) => n % m == 0;
@@ -139,6 +135,27 @@ namespace Endofunk.FX {
     public static Func<(A, B, C, D, E, F, G), R> ToTuple<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> f) => (t) => f(t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7);
     #endregion
 
+    #region Tuple Constructor 
+    public static Func<A, B, (A, B)> Tuple<A, B>() => (a, b) => (a, b);
+    public static Func<A, B, C, (A, B, C)> Tuple<A, B, C>() => (a, b, c) => (a, b, c);
+    public static Func<A, B, C, D, (A, B, C, D)> Tuple<A, B, C, D>() => (a, b, c, d) => (a, b, c, d);
+    public static Func<A, B, C, D, E, (A, B, C, D, E)> Tuple<A, B, C, D, E>() => (a, b, c, d, e) => (a, b, c, d, e);
+    public static Func<A, B, C, D, E, F, (A, B, C, D, E, F)> Tuple<A, B, C, D, E, F>() => (a, b, c, d, e, f) => (a, b, c, d, e, f);
+    public static Func<A, B, C, D, E, F, G, (A, B, C, D, E, F, G)> Tuple<A, B, C, D, E, F, G>() => (a, b, c, d, e, f, g) => (a, b, c, d, e, f, g);
+    #endregion
+
+    #region Tuple First, Second, Third, Fourth
+    public static Func<(A, B), A> First<A, B>() => t => t.Item1;
+    public static Func<(A, B), B> Second<A, B>() => t => t.Item2;
+    public static Func<(A, B, C), A> First<A, B, C>() => t => t.Item1;
+    public static Func<(A, B, C), B> Second<A, B, C>() => t => t.Item2;
+    public static Func<(A, B, C), C> Third<A, B, C>() => t => t.Item3;
+    public static Func<(A, B, C, D), A> First<A, B, C, D>() => t => t.Item1;
+    public static Func<(A, B, C, D), B> Second<A, B, C, D>() => t => t.Item2;
+    public static Func<(A, B, C, D), C> Third<A, B, C, D>() => t => t.Item3;
+    public static Func<(A, B, C, D), D> Fourth<A, B, C, D>() => t => t.Item4;
+    #endregion
+
     #region String Methods
     public static string DropLast(this string input, int quantity) {
       if (input.Count() - quantity < 0) { return input; }
@@ -149,6 +166,8 @@ namespace Endofunk.FX {
       if (input.Count() - quantity < 0) { return input; }
       return input.Substring(quantity);
     }
+
+    public static bool IsEmpty(this string @this) => @this.Length == 0;
     #endregion
 
     #region Type Methods
@@ -177,7 +196,7 @@ namespace Endofunk.FX {
       Stopwatch stopwatch = Stopwatch.StartNew();
       f();
       stopwatch.Stop();
-      Console.WriteLine("{0} : {1}ms", title, stopwatch.ElapsedMilliseconds);
+      WriteLine("{0} : {1}ms", title, stopwatch.ElapsedMilliseconds);
     }
 
     public static void Measure<A>(string title, int repeat, Func<A> f) {
@@ -187,27 +206,18 @@ namespace Endofunk.FX {
         stopwatch.Stop();
         return (r, a.Item2 + stopwatch.ElapsedMilliseconds);
       });
-      Console.WriteLine($"{title} - {result.Item2 / repeat}ms => result: {result.Item1}");
+      WriteLine($"{title} - {result.Item2 / repeat}ms => result: {result.Item1}");
     }
     #endregion
 
     #region Exception Handling / Logging
     public static string LogDefault(Exception e) => $"message: {e.Message}\ntrace: {e.StackTrace}\n";
-
-    //public static Either<string, T> Try<T>(Func<Either<string, T>> tryFunc) {
-    //  try {
-    //    return tryFunc();
-    //  } catch (Exception e) {
-    //    return Left<string, T>(LogDefault(e));
-    //  }
-    //}
     #endregion
 
     #region With / Then / Select
     public static A With<A>(this A a, Action<A> f) { f(a); return a; }
     public static B Then<A, B>(this A @this, Func<A, B> f) => @this == null ? default : f(@this);
     public static void Then<A>(this A @this, Action<A> f) { if (@this != null) f(@this); }
-    //public static B Select<A, B>(this A @this, Func<A, B> f) => @this.Then(f);
     #endregion
 
     #region File / Directory
@@ -234,16 +244,6 @@ namespace Endofunk.FX {
     }
     #endregion
 
-    #region IDataRecord Conversion
-    public static int ToInt(this IDataReader record, string sqlColumnName) => Convert.ToInt32(record[sqlColumnName]);
-    public static long ToLong(this IDataReader record, string sqlColumnName) => Convert.ToInt64(record[sqlColumnName]);
-    public static string ToString(this IDataReader record, string sqlColumnName) => Convert.ToString(record[sqlColumnName]);
-    public static bool ToBoolean(this IDataReader record, string sqlColumnName) => Convert.ToBoolean(record[sqlColumnName]);
-    public static double ToSingle(this IDataReader record, string sqlColumnName) => Convert.ToSingle(record[sqlColumnName]);
-    public static double ToDouble(this IDataReader record, string sqlColumnName) => Convert.ToDouble(record[sqlColumnName]);
-    public static DateTime toDateTime(this IDataReader record, string sqlColumnName) => ((long)Convert.ToInt32(record[sqlColumnName])).UnixTimeSecondsToDateTime();
-    #endregion
-
     #region DateTime Extension Methods
     public static int DurationInYears(this DateTime from, DateTime to) {
       var years = to.Year - from.Year;
@@ -261,13 +261,14 @@ namespace Endofunk.FX {
     #endregion
 
     #region DebugPrint
-    public static void DebugPrint(this string t) => Console.WriteLine(t);
-    public static void DebugPrint<A>(A value) => Console.WriteLine(value);
-    public static void DebugPrint(string format, params object[] arg) => Console.WriteLine(format, arg);
+    public static void DebugPrint(this string t) => WriteLine(t);
+    public static void DebugPrint<A>(A value) => WriteLine(value);
+    public static void DebugPrint(string format, params object[] arg) => WriteLine(format, arg);
     public static B DebugPrint<A, B>(A value, B result) {
-      Console.WriteLine(value);
+      WriteLine(value);
       return result;
     }
     #endregion
+
   }
 }

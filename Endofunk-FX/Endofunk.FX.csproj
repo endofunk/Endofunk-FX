@@ -6,7 +6,7 @@
     <RootNamespace>Endofunk.FX</RootNamespace>
     <AssemblyName>Endofunk.FX</AssemblyName>
     <PackageId>Endofunk.FX</PackageId>
-    <PackageVersion>0.2</PackageVersion>
+    <PackageVersion>0.2.1</PackageVersion>
     <Authors>endofunk</Authors>
     <Copyright>Copyright (c) endofunk</Copyright>
     <Owners>endofunk</Owners>
@@ -16,14 +16,12 @@
     <PackageReleaseNotes>Initial Release</PackageReleaseNotes>
     <PackageTags>C#, Functional, Functional Programming, Functor, Monad, Applicative Functor, Identity, Maybe, Result, Either, Validation, Reader, Writer, Tagged Union, Coyoneda, Yoneda, IEnumerable, Lambda, Tuple, Functions, Pure, Pointfree</PackageTags>
     <Summary>A core library of functional data types, extension methods, Linq conformance and more.</Summary>
-    <ReleaseVersion>0.2</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' " />
   <ItemGroup>
-    <Folder Include="DataTypes\" />
     <Folder Include="licenses\" />
   </ItemGroup>
   <ItemGroup>
