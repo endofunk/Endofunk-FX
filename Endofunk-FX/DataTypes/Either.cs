@@ -103,6 +103,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
+    public static Either<L, R> LiftM<A, L, R>(this Func<A, R> @this, Either<L, A> a) => a.FlatMap(xa => Right<L, R>(@this(xa)));
     public static Either<L, R> LiftM<A, B, L, R>(this Func<A, B, R> @this, Either<L, A> a, Either<L, B> b) => a.FlatMap(xa => b.FlatMap(xb => Right<L, R>(@this(xa, xb))));
     public static Either<L, R> LiftM<A, B, C, L, R>(this Func<A, B, C, R> @this, Either<L, A> a, Either<L, B> b, Either<L, C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Right<L, R>(@this(xa, xb, xc)))));
     public static Either<L, R> LiftM<A, B, C, D, L, R>(this Func<A, B, C, D, R> @this, Either<L, A> a, Either<L, B> b, Either<L, C> c, Either<L, D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Right<L, R>(@this(xa, xb, xc, xd))))));
@@ -124,6 +125,19 @@ namespace Endofunk.FX {
     #region Applicative Functor - Apply (Right Affinity)
     public static Either<L, R2> Apply<L, R, R2>(this Either<L, R> e, Either<L, Func<R, R2>> fn) => e.ApplyR(fn);
     public static Either<L, R2> Apply<L, R, R2>(this Either<L, Func<R, R2>> fn, Either<L, R> e) => e.ApplyR(fn);
+    public static Func<Either<L, R>, Either<L, R2>> Apply<L, R, R2>(this Either<L, Func<R, R2>> fn) => e => e.Apply(fn);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Either<L, RB> DropFirst<L, RA, RB>(this Either<L, RA> @this, Either<L, RB> other) => Const<RB, RA>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Either<L, RA> DropSecond<L, RA, RB>(this Either<L, RA> @this, Either<L, RB> other) => Const<RA, RB>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions (Right Affinity)

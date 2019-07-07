@@ -14,6 +14,7 @@ namespace Endofunk.FX {
   }
 
   public static partial class Prelude {
+
     #region Syntactic Sugar
     public static Tagged<E, T1> Tagged<E, T1>(E tag) where E : Enum => new Tagged<E, T1>(tag, false, default);
     public static Tagged<E, T1> Tagged<E, T1>(E tag, T1 value) where E : Enum => new Tagged<E, T1>(tag, true, value);
@@ -28,11 +29,25 @@ namespace Endofunk.FX {
     public static Tagged<E, R> FlatMap<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => f((@this.Tag, @this.Value));
     public static Tagged<E, R> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f, Tagged<E, T1> @this) where E : Enum => f((@this.Tag, @this.Value));
     public static Tagged<E, R> Bind<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => f((@this.Tag, @this.Value));
+    public static Func<Tagged<E, T1>, Tagged<E, R>> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f) where E : Enum => a => f((a.Tag, a.Value));
     #endregion
 
     #region Applicative Functor
     public static Tagged<E, R> Apply<E, T1, R>(this Tagged<E, T1> @this, Tagged<E, Func<T1, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, R> Apply<E, T1, R>(this Tagged<E, Func<T1, R>> fn, Tagged<E, T1> @this) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
+    public static Func<Tagged<E, T1>, Tagged<E, R>> Apply<E, T1, R>(this Tagged<E, Func<T1, R>> fn) where E : Enum => a => fn.FlatMap(g => a.Map(x => g.Item2(x)));
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Tagged<E, TB> DropFirst<E, TA, TB>(this Tagged<E, TA> @this, Tagged<E, TB> other) where E : Enum => Const<TB, TA>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Tagged<E, TA> DropSecond<E, TA, TB>(this Tagged<E, TA> @this, Tagged<E, TB> other) where E : Enum => Const<TA, TB>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions
@@ -76,6 +91,7 @@ namespace Endofunk.FX {
     public static Tagged<E, R> Select<E, T1, R>(this Tagged<E, T1> @this, Func<T1, R> f) where E : Enum => @this.Map(f);
     public static Tagged<E, R> SelectMany<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
+
   }
   #endregion
 
@@ -95,6 +111,7 @@ namespace Endofunk.FX {
   }
 
   public static partial class Prelude {
+
     #region Syntactic Sugar
     public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag) where E : Enum => new Tagged<E, T1, T2>(tag, 0, default, default);
     public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2>(tag, 1, value, default);

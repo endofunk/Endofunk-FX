@@ -135,6 +135,19 @@ namespace Endofunk.FX {
     #region Applicative Functor
     public static Maybe<R> Apply<A, R>(this Maybe<A> @this, Maybe<Func<A, R>> fn) => fn.FlatMap(g => @this.Map(x => g(x)));
     public static Maybe<R> Apply<A, R>(this Maybe<Func<A, R>> fn, Maybe<A> @this) => @this.Apply(fn);
+    public static Func<Maybe<A>, Maybe<R>> Apply<A, R>(this Maybe<Func<A, R>> fn) => a => a.Apply(fn);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Maybe<B> DropFirst<A, B>(this Maybe<A> @this, Maybe<B> other) => Const<B, A>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Maybe<A> DropSecond<A, B>(this Maybe<A> @this, Maybe<B> other) => Const<A, B>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions

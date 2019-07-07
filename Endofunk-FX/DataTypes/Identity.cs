@@ -55,6 +55,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
+    public static Identity<R> LiftM<A, R>(this Func<A, R> @this, Identity<A> a) => a.FlatMap(xa => @this(xa).ToIdentity());
     public static Identity<R> LiftM<A, B, R>(this Func<A, B, R> @this, Identity<A> a, Identity<B> b) => a.FlatMap(xa => b.FlatMap(xb => @this(xa, xb).ToIdentity()));
     public static Identity<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Identity<A> a, Identity<B> b, Identity<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => @this(xa, xb, xc).ToIdentity())));
     public static Identity<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Identity<A> a, Identity<B> b, Identity<C> c, Identity<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => @this(xa, xb, xc, xd).ToIdentity()))));
@@ -69,6 +70,19 @@ namespace Endofunk.FX {
     #region Applicative Functor
     public static Identity<R> Apply<A, R>(this Identity<A> @this, Identity<Func<A, R>> fn) => fn.FlatMap(g => @this.Map(x => g(x)));
     public static Identity<R> Apply<A, R>(this Identity<Func<A, R>> fn, Identity<A> @this) => @this.Apply(fn);
+    public static Func<Identity<A>, Identity<R>> Apply<A, R>(this Identity<Func<A, R>> fn) => a => a.Apply(fn);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Identity<B> DropFirst<A, B>(this Identity<A> @this, Identity<B> other) => Const<B, A>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Identity<A> DropSecond<A, B>(this Identity<A> @this, Identity<B> other) => Const<A, B>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions
@@ -88,6 +102,11 @@ namespace Endofunk.FX {
     public static Identity<B> Selective<A, B>(this Identity<Either<A, B>> @this, Identity<Func<A, B>> f) => @this.Value.IsRight ? Of(@this.Value.RValue) : Of(f.Value(@this.Value.LValue));
     #endregion
 
+    #region Match
+    public static void Match<A>(this Identity<A> @this, Action<A> f) => f(@this.Value);
+    public static R Match<A, R>(this Identity<A> @this, Func<A, R> f) => f(@this.Value);
+    #endregion
+
     #region DebugPrint
     public static void DebugPrint<A>(this Identity<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
@@ -102,6 +121,10 @@ namespace Endofunk.FX {
     public static Identity<R> Select<A, R>(this Identity<A> @this, Func<A, R> fn) => @this.Map(fn);
     public static Identity<R> SelectMany<A, R>(this Identity<A> @this, Func<A, Identity<R>> fn) => @this.FlatMap(fn);
     public static Identity<R> SelectMany<A, B, R>(this Identity<A> @this, Func<A, Identity<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIdentity()));
+    #endregion
+
+    #region Get
+    public static A Get<A>(this Identity<A> @this) => @this.Value;
     #endregion
 
   }

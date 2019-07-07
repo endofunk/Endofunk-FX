@@ -87,6 +87,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
+    public static Validation<L, R> LiftM<A, L, R>(this Func<A, R> @this, Validation<L, A> a) => a.FlatMap(m1 => Success<L, R>(@this(m1)));
     public static Validation<L, R> LiftM<A, B, L, R>(this Func<A, B, R> @this, Validation<L, A> a, Validation<L, B> b) => a.FlatMap(m1 => b.FlatMap(m2 => Success<L, R>(@this(m1, m2))));
     public static Validation<L, R> LiftM<A, B, C, L, R>(this Func<A, B, C, R> @this, Validation<L, A> a, Validation<L, B> b, Validation<L, C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Success<L, R>(@this(xa, xb, xc)))));
     public static Validation<L, R> LiftM<A, B, C, D, L, R>(this Func<A, B, C, D, R> @this, Validation<L, A> a, Validation<L, B> b, Validation<L, C> c, Validation<L, D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Success<L, R>(@this(xa, xb, xc, xd))))));
@@ -119,6 +120,19 @@ namespace Endofunk.FX {
     #region Applicative Functor - Apply (Right Affinity)
     public static Validation<L, R2> Apply<L, R, R2>(this Validation<L, R> @this, Validation<L, Func<R, R2>> fn) => @this.ApplyR(fn);
     public static Validation<L, R2> Apply<L, R, R2>(this Validation<L, Func<R, R2>> fn, Validation<L, R> @this) => @this.ApplyR(fn);
+    public static Func<Validation<L, R>, Validation<L, R2>> Apply<L, R, R2>(this Validation<L, Func<R, R2>> fn) => e => e.Apply(fn);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Validation<L, RB> DropFirst<L, RA, RB>(this Validation<L, RA> @this, Validation<L, RB> other) => Const<RB, RA>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Validation<L, RA> DropSecond<L, RA, RB>(this Validation<L, RA> @this, Validation<L, RB> other) => Const<RA, RB>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions (Right Affinity)

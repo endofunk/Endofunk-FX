@@ -84,6 +84,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
+    public static Result<R> LiftM<A, R>(this Func<A, R> @this, Result<A> a) => a.FlatMap(xa => Success(@this(xa)));
     public static Result<R> LiftM<A, B, R>(this Func<A, B, R> @this, Result<A> a, Result<B> b) => a.FlatMap(xa => b.FlatMap(xb => Success(@this(xa, xb))));
     public static Result<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Result<A> a, Result<B> b, Result<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Success(@this(xa, xb, xc)))));
     public static Result<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Success(@this(xa, xb, xc, xd))))));
@@ -98,6 +99,19 @@ namespace Endofunk.FX {
     #region Applicative Functor
     public static Result<R> Apply<A, R>(this Result<A> @this, Result<Func<A, R>> fn) => fn.FlatMap(g => @this.Map(x => g(x)));
     public static Result<R> Apply<A, R>(this Result<Func<A, R>> fn, Result<A> @this) => @this.Apply(fn);
+    public static Func<Result<A>, Result<R>> Apply<A, R>(this Result<Func<A, R>> fn) => a => a.Apply(fn);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the first argument.
+    /// (*>) :: f a -> f b -> f b
+    /// </summary>
+    public static Result<B> DropFirst<A, B>(this Result<A> @this, Result<B> other) => Const<B, A>().Flip().LiftA(@this, other);
+
+    /// <summary>
+    /// Sequence actions, discarding the value of the second argument.
+    /// (<*) :: f a -> f b -> f a
+    /// </summary>
+    public static Result<A> DropSecond<A, B>(this Result<A> @this, Result<B> other) => Const<A, B>().LiftA(@this, other);
     #endregion
 
     #region Applicative Functor - Lift a function & actions

@@ -106,9 +106,24 @@ namespace Endofunk.FX {
     #endregion
 
     #region Basic Combinators
-    public static T Id<T>(T t) => t;
-    public static Func<U, T> Const<T, U>(T t) => u => t;
-    public static Func<T, T> Id<T>() => t => t;
+    public static A Id<A>(A a) => a;
+    public static Func<A, B, A> Const<A, B>() => (a,  b) => a;
+    public static Func<B, A> Const<A, B>(A a) => b => a;
+    public static Func<A, A> Id<A>() => a => a;
+    #endregion
+
+    #region Flipped
+    /// <summary>
+    /// Takes its (first) two arguments in the reverse order.
+    /// flip :: ((a, b) -> c) -> ((b, a) -> c)
+    /// </summary>
+    public static Func<B, A, C> Flip<A, B, C>(this Func<A, B, C> f) => (b, a) => f(a, b);
+
+    /// <summary>
+    /// Takes its (first) two arguments in the reverse order.
+    /// flip :: (a -> b -> c) -> b -> a -> c
+    /// </summary>
+    public static Func<B, Func<A, C>> Flip<A, B, C>(this Func<A, Func<B, C>> f) => b => a => f(a)(b);
     #endregion
 
     #region Tuple Predicates
