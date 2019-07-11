@@ -1,7 +1,30 @@
-﻿using System;
+﻿// Result.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.ExceptionServices;
-using static System.Console;
 
 namespace Endofunk.FX {
 
@@ -127,6 +150,16 @@ namespace Endofunk.FX {
     public static Result<R> LiftA<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i, Result<J> j) => @this.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
+    #region Traverse
+    public static Result<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Result<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => Success(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
+
+    #region Sequence
+    public static Result<IEnumerable<A>> SequenceM<A>(IEnumerable<Result<A>> @this) => @this.TraverseM(Id<Result<A>>());
+    public static Result<IEnumerable<A>> SequenceA<A>(IEnumerable<Result<A>> @this) => @this.TraverseA(Id<Result<A>>());
+    #endregion 
+
     #region Match
     public static void Match<A>(this Result<A> @this, Action<ExceptionDispatchInfo> failed, Action<A> success) {
       switch (@this.IsSuccess) {
@@ -143,7 +176,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region DebugPrint
-    public static void DebugPrint<A>(this Result<A> @this, string title = "") => WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
+    public static void DebugPrint<A>(this Result<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
     #region Syntactic Sugar - Success / Failure 

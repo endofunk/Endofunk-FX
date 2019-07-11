@@ -1,3 +1,26 @@
+// IEnumerable.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,22 +45,41 @@ namespace Endofunk.FX {
     }
     #endregion
 
+    #region Foreach
+    public static void ForEach<A>(this IEnumerable<A> @this, Action<A> f) {
+      foreach (A e in @this) { f(e); } 
+    }
+
+    public static void ForEachBack<A>(this IEnumerable<A> @this, Action<A> f) {
+      for (int i = @this.Count() - 1; i >= 0; i--) { f(@this.ElementAt(i)); }
+    }
+    #endregion
+
+    #region Append
+    public static Func<IEnumerable<A>, A, IEnumerable<A>> Append<A>() => (xs, x) => xs.Append(x);
+    #endregion
+
     #region IEnumerable - Fold
     public static U Fold<T, U>(this IEnumerable<T> ts, U identity, Func<U, T, U> fn) {
       var accumulator = identity;
-      foreach (T element in ts) { accumulator = fn(accumulator, element); }
+      ts.ForEach(element => accumulator = fn(accumulator, element));
       return accumulator;
     }
     public static Func<IEnumerable<T>, U> Fold<T, U>(U identity, Func<U, T, U> fn) => ts => Prelude.Fold<T, U>(ts, identity, fn);
+    public static U FoldBack<T, U>(this IEnumerable<T> ts, U identity, Func<U, T, U> fn) {
+      var accumulator = identity;
+      ts.ForEachBack(element => accumulator = fn(accumulator, element));
+      return accumulator;
+    }
     #endregion
 
     #region Functor
     public static IEnumerable<U> Map<T, U>(this Func<T, U> fn, IEnumerable<T> ts) => ts.Map(fn);
-    public static IEnumerable<U> Map<T, U>(this IEnumerable<T> ts, Func<T, U> fn) => ts.Fold(new List<U>(), (a, e) => { a.Add(fn(e)); return a; });
+    public static IEnumerable<U> Map<T, U>(this IEnumerable<T> ts, Func<T, U> fn) => ts.Fold(Enumerable.Empty<U>(), (a, e) => a.Append(fn(e)));
     #endregion
 
     #region Flatten
-    public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> ts) => ts.Fold(new List<T>(), (a, e) => { if (e != null) { a.AddRange(e); }; return a; });
+    public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> ts) => ts.Fold(Enumerable.Empty<T>(), (a, e) => a.Concat(e));
     #endregion
 
     #region Monad
@@ -66,13 +108,13 @@ namespace Endofunk.FX {
 
     #region Filterable
     public static IEnumerable<T> Filter<T>(this Func<T, bool> fn, IEnumerable<T> ts) => ts.Filter(fn);
-    public static IEnumerable<T> Filter<T>(this IEnumerable<T> ts, Func<T, bool> fn) => ts.Fold(new List<T>(), (a, e) => { if (fn(e)) { a.Add(e); } return a; });
+    public static IEnumerable<T> Filter<T>(this IEnumerable<T> ts, Func<T, bool> fn) => ts.Fold(Enumerable.Empty<T>(), (a, e) => fn(e) ? a.Append(e) : a);
     #endregion
 
     #region Applicative Functor
     public static IEnumerable<U> Apply<T, U>(this IEnumerable<T> ts, IEnumerable<Func<T, U>> fn) => fn.FlatMap(g => ts.Map(x => g(x)));
     public static IEnumerable<U> Apply<T, U>(this IEnumerable<Func<T, U>> fn, IEnumerable<T> ts) => ts.Apply(fn);
-    public static List<T> ToList<T>(this T t) => new List<T> { t };
+    public static IEnumerable<T> ToIEnumerable<T>(this T t) => Enumerable.Empty<T>().Append(t);
     #endregion
 
     #region Applicative Functor - Lift a function & actions
@@ -89,11 +131,6 @@ namespace Endofunk.FX {
     #endregion
 
     #region Join Recreated
-    public static List<A> AddReturn<A>(this List<A> source, A element) {
-      source.Add(element);
-      return source;
-    }
-
     public static IEnumerable<R> JoinAP<A, B, C, R>(this IEnumerable<A> outer, IEnumerable<B> inner, Func<A, C> outerKey, Func<B, C> innerKey, Func<A, B, R> result) {
       Func<A, B, List<R>> f = (a, b) => outerKey(a).Equals(innerKey(b)) ? List(result(a, b)) : null;
       return outer.Map(f.Curry()).Apply(inner).Flatten();
@@ -106,8 +143,8 @@ namespace Endofunk.FX {
     #endregion
 
     #region IEnumerable - Collection Helpers (Equivalent to Take, TakeWhile & Skip, SkipWhile)
-    public static IEnumerable<A> Take2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((new List<A>(), 0), (a, e) => (a.Item2 < quantity) ? (a.Item1.AddReturn(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
-    public static IEnumerable<A> Skip2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((new List<A>(), 0), (a, e) => (a.Item2 >= quantity) ? (a.Item1.AddReturn(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
+    public static IEnumerable<A> Take2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((Enumerable.Empty<A>(), 0), (a, e) => (a.Item2 < quantity) ? (a.Item1.Append(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
+    public static IEnumerable<A> Skip2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((Enumerable.Empty<A>(), 0), (a, e) => (a.Item2 >= quantity) ? (a.Item1.Append(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
     #endregion
 
     #region String

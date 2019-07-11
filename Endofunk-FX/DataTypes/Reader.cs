@@ -1,4 +1,29 @@
+// Reader.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
@@ -81,11 +106,21 @@ namespace Endofunk.FX {
     public static Reader<S, R> LiftA<S, A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Reader<S, A> a, Reader<S, B> b, Reader<S, C> c, Reader<S, D> d, Reader<S, E> e, Reader<S, F> f, Reader<S, G> g, Reader<S, H> h, Reader<S, I> i, Reader<S, J> j) => @this.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
+    #region Traverse
+    public static Reader<S, IEnumerable<R>> TraverseM<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(ToReader<S, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Reader<S, IEnumerable<R>> TraverseA<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(ToReader<S, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => ToReader<S, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
+
+    #region Sequence
+    public static Reader<S, IEnumerable<A>> SequenceM<S, A>(IEnumerable<Reader<S, A>> @this) => @this.TraverseM(Id<Reader<S, A>>());
+    public static Reader<S, IEnumerable<A>> SequenceA<S, A>(IEnumerable<Reader<S, A>> @this) => @this.TraverseA(Id<Reader<S, A>>());
+    #endregion 
+
     #region DebugPrint
     public static void DebugPrint<R, A>(this Reader<R, A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Syntactic Sugar - Some / None
+    #region Syntactic Sugar
     public static Reader<S, A> ToReader<S, A>(this A a) => Reader<S, A>.Pure(a);
     #endregion
 

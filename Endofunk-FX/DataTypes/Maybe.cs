@@ -1,6 +1,29 @@
+// Maybe.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
@@ -163,6 +186,16 @@ namespace Endofunk.FX {
     public static Maybe<R> LiftA<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Maybe<A> a, Maybe<B> b, Maybe<C> c, Maybe<D> d, Maybe<E> e, Maybe<F> f, Maybe<G> g, Maybe<H> h, Maybe<I> i, Maybe<J> j) => @this.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
+    #region Traverse
+    public static Maybe<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Maybe<R>> f) => @this.Fold(Just(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Maybe<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Maybe<R>> f) => @this.Fold(Just(Enumerable.Empty<R>()), (a, e) => Just(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
+
+    #region Sequence
+    public static Maybe<IEnumerable<A>> SequenceM<A>(IEnumerable<Maybe<A>> @this) => @this.TraverseM(Id<Maybe<A>>());
+    public static Maybe<IEnumerable<A>> SequenceA<A>(IEnumerable<Maybe<A>> @this) => @this.TraverseA(Id<Maybe<A>>());
+    #endregion 
+
     #region Zip
     public static Maybe<(A, B)> Zip<A, B>(this Maybe<A> @this, Maybe<B> other) => Tuple<A, B>().ZipWith(@this, other);
     public static Maybe<C> ZipWith<A, B, C>(this Func<A, B, C> f, Maybe<A> ma, Maybe<B> mb) => f.LiftM(ma, mb);
@@ -170,17 +203,11 @@ namespace Endofunk.FX {
     #endregion
 
     #region Match
-    public static void Match<A>(this Maybe<A> @this, Action nothing, Action<A> just) {
-      switch (@this.IsJust) {
-        case true:
-          just(@this.Value);
-          return;
-        default:
-          nothing();
-          return;
-      }
+    public static void Match<A>(this Maybe<A> @this, Action<A> just, Action nothing) {
+      if (@this.IsJust) just(@this.Value);
+      else nothing();
     }
-    public static R Match<A, R>(this Maybe<A> @this, Func<R> nothing, Func<A, R> just) => @this.IsJust ? just(@this.Value) : nothing();
+    public static R Match<A, R>(this Maybe<A> @this, Func<A, R> just, Func<R> nothing) => @this.IsJust ? just(@this.Value) : nothing();
     #endregion
 
     #region DebugPrint
@@ -195,7 +222,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static IEnumerable<Maybe<R>> Traverse<A, R>(this Maybe<A> @this, Func<A, IEnumerable<R>> fn) => @this.Match(() => List(Nothing<R>()), t => fn(t).Map(Just));
+    //public static IEnumerable<Maybe<R>> Traverse<A, R>(this Maybe<A> @this, Func<A, IEnumerable<R>> fn) => @this.Match(() => List(Nothing<R>()), t => fn(t).Map(Just));
     #endregion
 
     #region Linq Conformance

@@ -1,5 +1,29 @@
+// Either.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Endofunk.FX {
 
@@ -7,9 +31,7 @@ namespace Endofunk.FX {
   public struct Either<L, R> : IEquatable<Either<L, R>> {
     internal readonly L LValue;
     internal readonly R RValue;
-    private enum Status {
-      Left, Right
-    }
+    private enum Status { Left, Right }
     private readonly Status State;
     public bool IsRight => State == Status.Right;
     public bool IsLeft => State == Status.Left;
@@ -17,13 +39,7 @@ namespace Endofunk.FX {
     public static implicit operator Either<L, R>(R value) => value == null ? Prelude.Left<L, R>(default) : Prelude.Right<L, R>(value);
     internal static Either<L, R> Right(R right) => new Either<L, R>(default, right, Status.Right);
     internal static Either<L, R> Left(L left) => new Either<L, R>(left, default, Status.Left);
-
-    public A Eval<A>(Func<L, A> f, Func<R, A> g) {
-      switch (State) {
-        case Status.Left: return f(LValue);
-        default: return g(RValue);
-      }
-    }
+    public A Eval<A>(Func<L, A> f, Func<R, A> g) => (IsLeft) ? f(LValue) : g(RValue); 
 
     public bool Equals(Either<L, R> other) {
       if (IsRight && other.IsRight && RValue.Equals(other.RValue)) return true;
@@ -56,25 +72,25 @@ namespace Endofunk.FX {
   public static partial class Prelude {
 
     #region Either - Fold
-    public static R2 FoldR<L, R, R2>(this Either<L, R> ts, R2 identity, Func<R2, R, R2> fn) {
+    public static R2 FoldR<L, R, R2>(this Either<L, R> @this, R2 identity, Func<R2, R, R2> fn) {
       var accumulator = identity;
-      foreach (R element in ts.AsEnumerable()) { accumulator = fn(accumulator, element); }
+      foreach (R element in @this.AsEnumerable()) { accumulator = fn(accumulator, element); }
       return accumulator;
     }
 
-    public static R2 Fold<L, R, R2>(this Either<L, R> e, Func<L, R2> left, Func<R, R2> right) => e.IsRight ? right(e.RValue) : left(e.LValue);
+    public static R2 Fold<L, R, R2>(this Either<L, R> @this, Func<L, R2> left, Func<R, R2> right) => @this.IsRight ? right(@this.RValue) : left(@this.LValue);
     #endregion
 
     #region Functor - MapL, MapR
-    public static Either<L, R2> MapR<L, R, R2>(this Func<R, R2> fn, Either<L, R> e) => e.MapR(fn);
-    public static Either<L, R2> MapR<L, R, R2>(this Either<L, R> e, Func<R, R2> fn) => e.IsRight ? Right<L, R2>(fn(e.RValue)) : Left<L, R2>(e.LValue);
-    public static Either<L2, R> MapL<L, L2, R>(this Func<L, L2> fn, Either<L, R> e) => e.MapL(fn);
-    public static Either<L2, R> MapL<L, L2, R>(this Either<L, R> e, Func<L, L2> fn) => e.IsRight ? Right<L2, R>(e.RValue) : Left<L2, R>(fn(e.LValue));
+    public static Either<L, R2> MapR<L, R, R2>(this Func<R, R2> @this, Either<L, R> e) => e.MapR(@this);
+    public static Either<L, R2> MapR<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.IsRight ? Right<L, R2>(fn(@this.RValue)) : Left<L, R2>(@this.LValue);
+    public static Either<L2, R> MapL<L, L2, R>(this Func<L, L2> @this, Either<L, R> e) => e.MapL(@this);
+    public static Either<L2, R> MapL<L, L2, R>(this Either<L, R> @this, Func<L, L2> fn) => @this.IsRight ? Right<L2, R>(@this.RValue) : Left<L2, R>(fn(@this.LValue));
     #endregion
 
     #region Functor - Map (Right Affinity)
-    public static Either<L, R2> Map<L, R, R2>(this Either<L, R> e, Func<R, R2> fn) => e.MapR(fn);
-    public static Either<L, R2> Map<L, R, R2>(this Func<R, R2> fn, Either<L, R> e) => e.MapR(fn);
+    public static Either<L, R2> Map<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.MapR(fn);
+    public static Either<L, R2> Map<L, R, R2>(this Func<R, R2> @this, Either<L, R> e) => e.MapR(@this);
     #endregion
 
     #region Functor - Bimap, First, Second
@@ -84,22 +100,22 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - FlatMapL, FlatMapR
-    public static Either<L, R2> FlatMapR<L, R, R2>(this Either<L, R> e, Func<R, Either<L, R2>> fn) => e.IsRight ? fn(e.RValue) : Left<L, R2>(e.LValue);
-    public static Either<L, R2> FlatMapR<L, R, R2>(this Func<R, Either<L, R2>> fn, Either<L, R> e) => e.FlatMapR(fn);
-    public static Either<L2, R> FlatMapL<L, L2, R>(this Either<L, R> e, Func<L, Either<L2, R>> fn) => e.IsRight ? Right<L2, R>(e.RValue) : fn(e.LValue);
-    public static Either<L2, R> FlatMapL<L, L2, R>(this Func<L, Either<L2, R>> fn, Either<L, R> e) => e.FlatMapL(fn);
+    public static Either<L, R2> FlatMapR<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.IsRight ? fn(@this.RValue) : Left<L, R2>(@this.LValue);
+    public static Either<L, R2> FlatMapR<L, R, R2>(this Func<R, Either<L, R2>> @this, Either<L, R> e) => e.FlatMapR(@this);
+    public static Either<L2, R> FlatMapL<L, L2, R>(this Either<L, R> @this, Func<L, Either<L2, R>> fn) => @this.IsRight ? Right<L2, R>(@this.RValue) : fn(@this.LValue);
+    public static Either<L2, R> FlatMapL<L, L2, R>(this Func<L, Either<L2, R>> @this, Either<L, R> e) => e.FlatMapL(@this);
     #endregion
 
     #region Monad - Bind, FlatMap (Right Affinity)
-    public static Either<L, R2> Bind<L, R, R2>(this Either<L, R> e, Func<R, Either<L, R2>> fn) => e.FlatMapR(fn);
-    public static Either<L, R2> Bind<L, R, R2>(this Func<R, Either<L, R2>> fn, Either<L, R> e) => e.FlatMapR(fn);
-    public static Either<L, R2> FlatMap<L, R, R2>(this Either<L, R> e, Func<R, Either<L, R2>> fn) => e.FlatMapR(fn);
-    public static Either<L, R2> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> fn, Either<L, R> e) => e.FlatMapR(fn);
-    public static Func<Either<L, R>, Either<L, R2>> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> f) => a => a.FlatMap(f);
+    public static Either<L, R2> Bind<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMapR(fn);
+    public static Either<L, R2> Bind<L, R, R2>(this Func<R, Either<L, R2>> @this, Either<L, R> e) => e.FlatMapR(@this);
+    public static Either<L, R2> FlatMap<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMapR(fn);
+    public static Either<L, R2> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> @this, Either<L, R> e) => e.FlatMapR(@this);
+    public static Func<Either<L, R>, Either<L, R2>> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> @this) => a => a.FlatMap(@this);
     #endregion
 
     #region Kleisli Composition
-    public static Func<A, Either<L, C>> Compose<L, A, B, C>(this Func<A, Either<L, B>> f, Func<B, Either<L, C>> g) => f.Compose(g.FlatMap());
+    public static Func<A, Either<L, C>> Compose<L, A, B, C>(this Func<A, Either<L, B>> f, Func<B, Either<L, C>> @this) => f.Compose(@this.FlatMap());
     #endregion
 
     #region Monad - Lift a function & actions
@@ -116,16 +132,16 @@ namespace Endofunk.FX {
     #endregion
 
     #region Applicative Functor - ApplyL, ApplyR
-    public static Either<L, R2> ApplyR<L, R, R2>(this Either<L, R> e, Either<L, Func<R, R2>> fn) => fn.FlatMapR(g => e.MapR(x => g(x)));
-    public static Either<L, R2> ApplyR<L, R, R2>(this Either<L, Func<R, R2>> fn, Either<L, R> e) => e.Apply(fn);
-    public static Either<L2, R> ApplyL<L, L2, R>(this Either<L, R> e, Either<Func<L, L2>, R> fn) => fn.FlatMapL(g => e.MapL(x => g(x)));
-    public static Either<L2, R> ApplyL<L, L2, R>(this Either<Func<L, L2>, R> fn, Either<L, R> e) => e.ApplyL(fn);
+    public static Either<L, R2> ApplyR<L, R, R2>(this Either<L, R> @this, Either<L, Func<R, R2>> fn) => fn.FlatMapR(g => @this.MapR(x => g(x)));
+    public static Either<L, R2> ApplyR<L, R, R2>(this Either<L, Func<R, R2>> @this, Either<L, R> e) => e.Apply(@this);
+    public static Either<L2, R> ApplyL<L, L2, R>(this Either<L, R> @this, Either<Func<L, L2>, R> fn) => fn.FlatMapL(g => @this.MapL(x => g(x)));
+    public static Either<L2, R> ApplyL<L, L2, R>(this Either<Func<L, L2>, R> @this, Either<L, R> e) => e.ApplyL(@this);
     #endregion
 
     #region Applicative Functor - Apply (Right Affinity)
-    public static Either<L, R2> Apply<L, R, R2>(this Either<L, R> e, Either<L, Func<R, R2>> fn) => e.ApplyR(fn);
-    public static Either<L, R2> Apply<L, R, R2>(this Either<L, Func<R, R2>> fn, Either<L, R> e) => e.ApplyR(fn);
-    public static Func<Either<L, R>, Either<L, R2>> Apply<L, R, R2>(this Either<L, Func<R, R2>> fn) => e => e.Apply(fn);
+    public static Either<L, R2> Apply<L, R, R2>(this Either<L, R> @this, Either<L, Func<R, R2>> fn) => @this.ApplyR(fn);
+    public static Either<L, R2> Apply<L, R, R2>(this Either<L, Func<R, R2>> @this, Either<L, R> e) => e.ApplyR(@this);
+    public static Func<Either<L, R>, Either<L, R2>> Apply<L, R, R2>(this Either<L, Func<R, R2>> @this) => e => e.Apply(@this);
 
     /// <summary>
     /// Sequence actions, discarding the value of the first argument.
@@ -153,18 +169,21 @@ namespace Endofunk.FX {
     public static Either<L, R> LiftA<A, B, C, D, E, F, G, H, I, J, L, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> fn, Either<L, A> a, Either<L, B> b, Either<L, C> c, Either<L, D> d, Either<L, E> e, Either<L, F> f, Either<L, G> g, Either<L, H> h, Either<L, I> i, Either<L, J> j) => fn.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
-    #region Match
-    public static void Match<L, R>(this Either<L, R> e, Action<L> left, Action<R> right) {
-      switch (e.IsRight) {
-        case true:
-          right(e.RValue);
-          return;
-        default:
-          left(e.LValue);
-          return;
-      }
-    }
+    #region Traverse
+    public static Either<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Either<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Right<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
 
+    #region Sequence
+    public static Either<L, IEnumerable<A>> SequenceM<L, A>(IEnumerable<Either<L, A>> @this) => @this.TraverseM(Id<Either<L, A>>());
+    public static Either<L, IEnumerable<A>> SequenceA<L, A>(IEnumerable<Either<L, A>> @this) => @this.TraverseA(Id<Either<L, A>>());
+    #endregion 
+
+    #region Match
+    public static void Match<L, R>(this Either<L, R> @this, Action<L> left, Action<R> right) {
+      if (@this.IsRight) right(@this.RValue);
+      else left(@this.LValue); 
+    }
     public static R2 Match<L, R, R2>(this Either<L, R> @this, Func<L, R2> left, Func<R, R2> right) => (@this.IsRight) ? right(@this.RValue) : left(@this.LValue);
     #endregion
 
@@ -175,8 +194,8 @@ namespace Endofunk.FX {
     #region Syntactic Sugar - Right / Left
     public static Either<L, R> Right<L, R>(R value) => Either<L, R>.Right(value);
     public static Either<L, R> Left<L, R>(L value) => Either<L, R>.Left(value);
-    public static Either<L, R> ToEither<L, R>(this R r) => Right<L, R>(r);
-    public static Func<A, Either<L, B>> ToEither<L, A, B>(this Func<A, B> f) => a => Right<L, B>(f(a));
+    public static Either<L, R> ToEither<L, R>(this R @this) => Right<L, R>(@this);
+    public static Func<A, Either<L, B>> ToEither<L, A, B>(this Func<A, B> @this) => a => Right<L, B>(@this(a));
     #endregion
 
     #region Linq Conformance

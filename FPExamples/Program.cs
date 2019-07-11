@@ -1,11 +1,33 @@
-﻿using System;
+﻿// Program.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Endofunk.FX;
-
 using static Endofunk.FX.Prelude;
 using static System.Console;
-using System.Net;
 
 namespace FPExamples {
 
@@ -108,7 +130,7 @@ namespace FPExamples {
       //var tupleLens = Lens<(string, int), int>.Of(s => s.Item2, (a, s) => (s.Item1, a));
       //Console.WriteLine(tupleLens.Set(3, ("abc", 2)));
 
-      ////var prismSubject = Prism<Person, Maybe<Subject>>.Of(s => { return s.IsStudent == true ? Some(s.Subject) : None<Subject>(); }, (a, s) => s.IsStudent == true ? new Person());
+      ////var prismSubject = Prism<Person, Maybe<Subject>>.Of(s => { return s.IsStudent == true ? Just(s.Subject) : Nothing<Subject>(); }, (a, s) => s.IsStudent == true ? new Person());
 
       BinaryOp rectArea = RectArea;
       BinaryOp squareArea = SquareArea;
@@ -128,9 +150,7 @@ namespace FPExamples {
         .Map(x => x + 1)
         .DebugPrint();
 
-      
-
-      //Some(1)
+      //Just(1)
       //  .Map(x => x + 2)
       //  .DebugPrint();
 
@@ -276,7 +296,7 @@ namespace FPExamples {
 
       Person num = null;
 
-      var maybe = Some(num);
+      var maybe = Just(num);
       maybe.DebugPrint();
 
       var reader = 2.ToReader<string, int>();
@@ -394,7 +414,15 @@ namespace FPExamples {
         (IpAddress.V6.Equals(), t => WriteLine($"IP V6 {t.Value2}"))
       );
 
-     
+
+      var numbers2 = List(1, 2, 3, 4, 5);
+      numbers.Map(x => x + 1).DebugPrint();
+      numbers.ForEach(Console.WriteLine);
+
+      var strings = List("one", "two", "three", "four");
+
+      strings.Map(Fun((string s) => s.ToUpper()));
+
 
     }
   }

@@ -1,5 +1,29 @@
+// Validation.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Endofunk.FX {
 
@@ -7,9 +31,7 @@ namespace Endofunk.FX {
   public struct Validation<L, R> : IEquatable<Validation<L, R>> {
     internal readonly List<L> LValue;
     internal readonly R RValue;
-    private enum Status {
-      Fail, Success
-    }
+    private enum Status { Fail, Success }
     private readonly Status State;
     public bool IsSuccess => State == Status.Success;
     public bool IsFail => State == Status.Fail;
@@ -148,16 +170,20 @@ namespace Endofunk.FX {
     public static Validation<L, R> LiftA<A, B, C, D, E, F, G, H, I, J, L, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> fn, Validation<L, A> a, Validation<L, B> b, Validation<L, C> c, Validation<L, D> d, Validation<L, E> e, Validation<L, F> f, Validation<L, G> g, Validation<L, H> h, Validation<L, I> i, Validation<L, J> j) => fn.Curry().MapR(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
+    #region Traverse
+    public static Validation<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Validation<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Success<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
+
+    #region Sequence
+    public static Validation<L, IEnumerable<A>> SequenceM<L, A>(IEnumerable<Validation<L, A>> @this) => @this.TraverseM(Id<Validation<L, A>>());
+    public static Validation<L, IEnumerable<A>> SequenceA<L, A>(IEnumerable<Validation<L, A>> @this) => @this.TraverseA(Id<Validation<L, A>>());
+    #endregion 
+
     #region Match
     public static void Match<L, R>(this Validation<L, R> @this, Action<List<L>> left, Action<R> right) {
-      switch (@this.IsSuccess) {
-        case true:
-          right(@this.RValue);
-          return;
-        default:
-          left(@this.LValue);
-          return;
-      }
+      if (@this.IsSuccess) right(@this.RValue);
+      else left(@this.LValue);
     }
 
     public static R2 Match<L, R, R2>(this Validation<L, R> @this, Func<List<L>, R2> left, Func<R, R2> right) => @this.IsSuccess ? right(@this.RValue) : left(@this.LValue);

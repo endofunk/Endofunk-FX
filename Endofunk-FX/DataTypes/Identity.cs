@@ -1,5 +1,29 @@
+// Identity.cs
+//
+// MIT License
+// Copyright (c) 2019 endofunk
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Endofunk.FX {
 
@@ -101,6 +125,16 @@ namespace Endofunk.FX {
     #region Selective Applicative Functor
     public static Identity<B> Selective<A, B>(this Identity<Either<A, B>> @this, Identity<Func<A, B>> f) => @this.Value.IsRight ? Of(@this.Value.RValue) : Of(f.Value(@this.Value.LValue));
     #endregion
+
+    #region Traverse
+    public static Identity<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Identity<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => Of(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    #endregion
+
+    #region Sequence
+    public static Identity<IEnumerable<A>> SequenceM<A>(IEnumerable<Identity<A>> @this) => @this.TraverseM(Id<Identity<A>>());
+    public static Identity<IEnumerable<A>> SequenceA<A>(IEnumerable<Identity<A>> @this) => @this.TraverseA(Id<Identity<A>>());
+    #endregion 
 
     #region Match
     public static void Match<A>(this Identity<A> @this, Action<A> f) => f(@this.Value);
