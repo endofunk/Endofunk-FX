@@ -26,7 +26,7 @@ The following is an incompete list of the functional data types included in `End
 | Subscriber | The Suscriber is modelled on the Redux concept. |
 | *Action* | The Tagged type fulfills the role of the Action in the Redux concept. |
 
-All types are `Functor`, `Applicative Functor` and `Monad` enabled; with `monadic lifters` and `applicative lifters`. `Kleisli monadic composition` has been enabled on all monadic types, and `Linq` is enabled.
+All types support `Functor`, `Applicative Functor` and `Monad`; with `monadic lifters`, `applicative lifters`, `Kleisli monadic composition`, `Linq`, `Traverse` and `Sequence`.
 
 Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
 
