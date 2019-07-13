@@ -38,8 +38,7 @@ namespace Endofunk.FX {
     public override string ToString() => $"Writer<{typeof(W).Simplify()}, {typeof(A).Simplify()}>[{_W.GetType().Simplify()}]";
   }
 
-    public static partial class Prelude {
-
+  public static partial class WriterExtensions {
     #region Functor
     public static Writer<W, B> Map<W, A, B>(this Writer<W, A> @this, Func<A, B> f) => Writer<W, B>.Of(@this._W, f(@this._A));
     public static Writer<W, B> Map<W, A, B>(this Func<A, B> f, Writer<W, A> @this) => Writer<W, B>.Of(@this._W, f(@this._A));
@@ -66,5 +65,9 @@ namespace Endofunk.FX {
     #region DebugPrint
     public static void DebugPrint<W, A>(this Writer<W, A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
+  }
+
+  public static partial class Prelude {
+
   }
 }

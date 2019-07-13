@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -32,12 +33,7 @@ namespace Endofunk.FX {
     public Yoneda(object functor, Func<A, B> transform) => (Functor, Transform) = (functor, transform);
   }
 
-  public static partial class Prelude {
-
-    #region Syntactic Sugar
-    public static Yoneda<A, A> ToYoneda<A>(this object functor) => new Yoneda<A, A>(functor, Id);
-    #endregion
-
+  public static partial class YonedaExtensions {
     #region Functor
     public static Yoneda<A, C> Map<A, B, C>(this Yoneda<A, B> @this, Func<B, C> g) => new Yoneda<A, C>(@this.Functor, a => g(@this.Transform(a)));
     #endregion
@@ -55,5 +51,14 @@ namespace Endofunk.FX {
     public static Validation<string, R> RunValidation<V, R>(this Yoneda<V, R> @this) => ((Validation<string, V>)@this.Functor).Map(@this.Transform);
     #endregion
 
+    #region ToYoneda
+    public static Yoneda<A, A> ToYoneda<A>(this object functor) => new Yoneda<A, A>(functor, Id);
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+
+    #endregion
   }
 }

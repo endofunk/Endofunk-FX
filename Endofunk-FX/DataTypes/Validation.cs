@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -67,10 +68,9 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class ValidationExtensions {
     #region Fold
-    public static R2 Fold<L, R1, R2>(this Validation<L, R1> @this, Func<List<L>, R2> l, Func<R1, R2> r) => @this.IsSuccess ? r(@this.RValue) : l(@this.LValue);
+    public static R2 Fold<L, R1, R2>(this Validation<L, R1> @this, Func<List<L>, R2> left, Func<R1, R2> right) => @this.IsSuccess ? right(@this.RValue) : left(@this.LValue);
     #endregion
 
     #region Functor - MapL, MapR
@@ -158,7 +158,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region Applicative Functor - Lift a function & actions (Right Affinity)
-    public static Validation<L, R> LiftA<A, L, R>(this Func<A, R> fn, Validation<L, A> a) => fn.MapR(a); 
+    public static Validation<L, R> LiftA<A, L, R>(this Func<A, R> fn, Validation<L, A> a) => fn.MapR(a);
     public static Validation<L, R> LiftA<A, B, L, R>(this Func<A, B, R> fn, Validation<L, A> a, Validation<L, B> b) => fn.Curry().MapR(a).Apply(b);
     public static Validation<L, R> LiftA<A, B, C, L, R>(this Func<A, B, C, R> fn, Validation<L, A> a, Validation<L, B> b, Validation<L, C> c) => fn.Curry().MapR(a).Apply(b).Apply(c);
     public static Validation<L, R> LiftA<A, B, C, D, L, R>(this Func<A, B, C, D, R> fn, Validation<L, A> a, Validation<L, B> b, Validation<L, C> c, Validation<L, D> d) => fn.Curry().MapR(a).Apply(b).Apply(c).Apply(d);
@@ -171,13 +171,23 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static Validation<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Validation<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Success<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(left: l => Enumerable.Empty<Validation<L, B>>().Append(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static Identity<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, Identity<B>> f) => @this.Fold(left: l => Identity<Validation<L, B>>.Of(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static Result<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, Result<B>> f) => @this.Fold(left: l => Success(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static IO<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, IO<B>> f) => @this.Fold(left: l => Fail<L, B>(l).ToIO(), right: a => f(a).Map(Success<L, B>()));
+    public static Reader<R, Validation<L, B>> Traverse<L, R, A, B>(this Validation<L, A> @this, Func<A, Reader<R, B>> f) => @this.Fold(left: l => Reader<R, Validation<L, B>>.Pure(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static Maybe<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, Maybe<B>> f) => @this.Fold(left: l => Just(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static Either<L2, Validation<L, B>> Traverse<L2, L, A, B>(this Validation<L, A> @this, Func<A, Either<L2, B>> f) => @this.Fold(left: l => Right<L2, Validation<L, B>>(Fail<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
     #endregion
 
     #region Sequence
-    public static Validation<L, IEnumerable<A>> SequenceM<L, A>(IEnumerable<Validation<L, A>> @this) => @this.TraverseM(Id<Validation<L, A>>());
-    public static Validation<L, IEnumerable<A>> SequenceA<L, A>(IEnumerable<Validation<L, A>> @this) => @this.TraverseA(Id<Validation<L, A>>());
+    public static IEnumerable<Validation<L, A>> Sequence<L, A>(Validation<L, IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Identity<Validation<L, A>> Sequence<L, A>(Validation<L, Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static Result<Validation<L, A>> Sequence<L, A>(Validation<L, Result<A>> @this) => @this.Traverse(Id<Result<A>>());
+    public static IO<Validation<L, A>> Sequence<L, A>(Validation<L, IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Validation<L, A>> Sequence<L, R, A>(Validation<L, Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Maybe<Validation<L, A>> Sequence<L, A>(Validation<L, Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Either<L2, Validation<L, A>> Sequence<L2, L, A>(Validation<L, Either<L2, A>> @this) => @this.Traverse(Id<Either<L2, A>>());
     #endregion 
 
     #region Match
@@ -193,20 +203,26 @@ namespace Endofunk.FX {
     public static void DebugPrint<L, R>(this Validation<L, R> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Syntactic Sugar - Right / Left
-    public static Validation<L, R> Success<L, R>(R value) => Validation<L, R>.Success(value);
-    public static Validation<L, R> Fail<L, R>(L value) => Validation<L, R>.Fail(List(value));
-    public static Validation<L, R> Fail<L, R>(List<L> value) => Validation<L, R>.Fail(value);
-    public static Validation<L, R> ToValidation<L, R>(this R r) => Success<L, R>(r);
-    public static Validation<string, A> Validate<A>(this Predicate<A> p, A value, string cause) => p(value) ? Success<string, A>(value) : Fail<string, A>(cause);
-    public static Func<A, Validation<L, B>> ToValidation<L, A, B>(this Func<A, B> f) => a => Success<L, B>(f(a));
-    #endregion
-
     #region Linq Conformance
     public static Validation<L, R2> Select<L, R, R2>(this Validation<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
     public static Validation<L, R2> SelectMany<L, R, R2>(this Validation<L, R> @this, Func<R, Validation<L, R2>> fn) => @this.FlatMap(fn);
     public static Validation<L, R2> SelectMany<L, R, R1, R2>(this Validation<L, R> @this, Func<R, Validation<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToValidation<L, R2>()));
     #endregion
 
+    #region ToValidation
+    public static Validation<L, R> ToValidation<L, R>(this R r) => Success<L, R>(r);
+    public static Validation<string, A> Validate<A>(this Predicate<A> p, A value, string cause) => p(value) ? Success<string, A>(value) : Fail<string, A>(cause);
+    public static Func<A, Validation<L, B>> ToValidation<L, A, B>(this Func<A, B> f) => a => Success<L, B>(f(a));
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar - Right / Left
+    public static Validation<L, R> Success<L, R>(R value) => Validation<L, R>.Success(value);
+    public static Validation<L, R> Fail<L, R>(L value) => Validation<L, R>.Fail(List(value));
+    public static Validation<L, R> Fail<L, R>(List<L> value) => Validation<L, R>.Fail(value);
+    public static Func<R, Validation<L, R>> Success<L, R>() => value => Validation<L, R>.Success(value);
+    public static Func<L, Validation<L, R>> Fail<L, R>() => value => Validation<L, R>.Fail(List(value));
+    #endregion
   }
 }

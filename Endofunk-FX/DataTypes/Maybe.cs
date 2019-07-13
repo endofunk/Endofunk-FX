@@ -114,8 +114,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class MaybeExtensions {
     #region Fold
     public static U Fold<T, U>(this Maybe<T> ts, U identity, Func<U, T, U> fn) {
       var accumulator = identity;
@@ -187,13 +186,23 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static Maybe<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Maybe<R>> f) => @this.Fold(Just(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Maybe<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Maybe<R>> f) => @this.Fold(Just(Enumerable.Empty<R>()), (a, e) => Just(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(nothing: () => Enumerable.Empty<Maybe<B>>().Append(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Identity<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Identity<B>> f) => @this.Fold(nothing: () => Identity<Maybe<B>>.Of(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Result<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Result<B>> f) => @this.Fold(nothing: () => Success(Nothing<B>()), just: a => f(a).Map(Just));
+    public static IO<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, IO<B>> f) => @this.Fold(nothing: () => Nothing<B>().ToIO<Maybe<B>>(), just: a => f(a).Map(Just));
+    public static Reader<R, Maybe<B>> Traverse<R, A, B>(this Maybe<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(nothing: () => Reader<R, Maybe<B>>.Pure(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Either<L, Maybe<B>> Traverse<L, A, B>(this Maybe<A> @this, Func<A, Either<L, B>> f) => @this.Fold(nothing: () => Right<L, Maybe<B>>(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Validation<L, Maybe<B>> Traverse<L, A, B>(this Maybe<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(nothing: () => Success<L, Maybe<B>>(Nothing<B>()), just: a => f(a).Map(Just));
     #endregion
 
     #region Sequence
-    public static Maybe<IEnumerable<A>> SequenceM<A>(IEnumerable<Maybe<A>> @this) => @this.TraverseM(Id<Maybe<A>>());
-    public static Maybe<IEnumerable<A>> SequenceA<A>(IEnumerable<Maybe<A>> @this) => @this.TraverseA(Id<Maybe<A>>());
+    public static IEnumerable<Maybe<A>> Sequence<A>(Maybe<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Identity<Maybe<A>> Sequence<A>(Maybe<Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static Result<Maybe<A>> Sequence<A>(Maybe<Result<A>> @this) => @this.Traverse(Id<Result<A>>());
+    public static IO<Maybe<A>> Sequence<A>(Maybe<IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Maybe<A>> Sequence<R, A>(Maybe<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Either<L, Maybe<A>> Sequence<L, A>(Maybe<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
+    public static Validation<L, Maybe<A>> Sequence<L, A>(Maybe<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
     #endregion 
 
     #region Zip
@@ -214,17 +223,6 @@ namespace Endofunk.FX {
     public static void DebugPrint<A>(this Maybe<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Syntactic Sugar - Just / Nothing
-    public static Maybe<A> Just<A>(A value) => Maybe<A>.Just(value);
-    public static Maybe<A> Nothing<A>() => Maybe<A>.Nothing();
-    public static Maybe<A> ToMaybe<A>(this A a) => Just(a);
-    public static Func<A, Maybe<B>> ToMaybe<A, B>(this Func<A, B> f) => a => Maybe<B>.Just(f(a));
-    #endregion
-
-    #region Traverse
-    //public static IEnumerable<Maybe<R>> Traverse<A, R>(this Maybe<A> @this, Func<A, IEnumerable<R>> fn) => @this.Match(() => List(Nothing<R>()), t => fn(t).Map(Just));
-    #endregion
-
     #region Linq Conformance
     public static Maybe<R> Select<A, R>(this Maybe<A> @this, Func<A, R> fn) => @this.Map(fn);
     public static Maybe<R> SelectMany<A, R>(this Maybe<A> @this, Func<A, Maybe<R>> fn) => @this.FlatMap(fn);
@@ -234,7 +232,18 @@ namespace Endofunk.FX {
     #region GetOrElse
     public static A GetOrElse<A>(this Maybe<A> @this, A other) => @this.IsJust ? @this.Value : other;
     #endregion
- 
+
+    #region ToMaybe
+    public static Maybe<A> ToMaybe<A>(this A a) => Just(a);
+    public static Func<A, Maybe<B>> ToMaybe<A, B>(this Func<A, B> f) => a => Maybe<B>.Just(f(a));
+    #endregion
   }
 
+  public static partial class Prelude {
+    #region Syntactic Sugar - Just / Nothing
+    public static Maybe<A> Just<A>(A value) => Maybe<A>.Just(value);
+    public static Func<A, Maybe<A>> Just<A>() => a => Just(a);
+    public static Maybe<A> Nothing<A>() => Maybe<A>.Nothing();
+    #endregion
+  }
 }

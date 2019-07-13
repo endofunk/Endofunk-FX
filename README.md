@@ -11,7 +11,7 @@ The following is an incompete list of the functional data types included in `End
 
 | Type  | Overview |
 |-------|----------|
-| Identity | The Identity type is a trivial type to access functor, monad, applicative functor, etc. algebras. | 
+| Identity | The Identity type is a trivial type to access functor, monad, applicative functor, etc. algebras. |
 | Maybe | The Maybe type encapsulates an optional value. A value of type Maybe a either contains a value of type a (represented as Just a), or it is empty (represented as Nothing)|
 | Either| The Either type encapsulates a logical disjunction of two possibilities: either Left or Right. |
 | Result | The Result type is similar to the Either type except that the left disjunction is fixed to capture of a C# Exception. |
@@ -30,7 +30,10 @@ All types support `Functor`, `Applicative Functor` and `Monad`; with `monadic li
 
 Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
 
+
+
 # Future Plans
+
 - The `IO`, `Writer` and `Union` type monads are a work in progress. 
 - In addition to this `STAB` and `SA` Optics type covering `Lens` and `Prims` are also a work in progress and will be added shortly.  In future this may transition to `profunctor` optics.
 - I intend to explore adding functional extension methods to the C# 8.0 `Nullable` types to turn Nullable into a 1st class functional type similar to `Maybe`, and hopefully to also enabe smooth transforms between `value` and `class` element types.

@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -32,12 +33,7 @@ namespace Endofunk.FX {
     public Coyoneda(V value, Func<A, B> transform) => (Value, Transform) = (value, transform);
   }
 
-  public static partial class Prelude {
-
-    #region Syntactic Sugar
-    public static Coyoneda<V, B, B> ToCoyo<V, B>(this V value) => new Coyoneda<V, B, B>(value, Id);
-    #endregion
-
+  public static partial class CoyonedaExtensions {
     #region Functor
     public static Coyoneda<V, A, C> Map<V, A, B, C>(this Coyoneda<V, A, B> @this, Func<B, C> g) => new Coyoneda<V, A, C>(@this.Value, a => g(@this.Transform(a)));
     #endregion
@@ -56,5 +52,14 @@ namespace Endofunk.FX {
     public static Result<R> Run<V, R>(this Coyoneda<Result<V>, V, R> @this) => @this.Value.Map(v => @this.Transform(v));
     #endregion
 
+    #region ToCoyo
+    public static Coyoneda<V, B, B> ToCoyo<V, B>(this V value) => new Coyoneda<V, B, B>(value, Id);
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+
+    #endregion
   }
 }

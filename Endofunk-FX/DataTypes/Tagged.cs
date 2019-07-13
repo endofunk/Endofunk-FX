@@ -22,6 +22,7 @@
 // THE SOFTWARE.
 
 using System;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -35,14 +36,10 @@ namespace Endofunk.FX {
     public T1 Value => !HasValue ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.") : UnionValue;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}>[{Value}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-
-    #region Syntactic Sugar
-    public static Tagged<E, T1> Tagged<E, T1>(E tag) where E : Enum => new Tagged<E, T1>(tag, false, default);
-    public static Tagged<E, T1> Tagged<E, T1>(E tag, T1 value) where E : Enum => new Tagged<E, T1>(tag, true, value);
-    #endregion
-
+  #region Tagged 1 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R> Map<E, T1, R>(this Tagged<E, T1> @this, Func<T1, R> f) where E : Enum => Tagged(@this.Tag, f(@this.Value));
     public static Tagged<E, R> Map<E, T1, R>(this Func<T1, R> f, Tagged<E, T1> @this) where E : Enum => Tagged(@this.Tag, f(@this.Value));
@@ -114,9 +111,18 @@ namespace Endofunk.FX {
     public static Tagged<E, R> Select<E, T1, R>(this Tagged<E, T1> @this, Func<T1, R> f) where E : Enum => @this.Map(f);
     public static Tagged<E, R> SelectMany<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
-
   }
   #endregion
+
+  #region Tagged 1 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1> Tagged<E, T1>(E tag) where E : Enum => new Tagged<E, T1>(tag, false, default);
+    public static Tagged<E, T1> Tagged<E, T1>(E tag, T1 value) where E : Enum => new Tagged<E, T1>(tag, true, value);
+    #endregion
+  }
+  #endregion
+
 
   #region Tagged 2
   public sealed class Tagged<E, T1, T2> where E : Enum {
@@ -132,15 +138,10 @@ namespace Endofunk.FX {
     public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}>[{Value1}, {Value2}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-
-    #region Syntactic Sugar
-    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag) where E : Enum => new Tagged<E, T1, T2>(tag, 0, default, default);
-    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2>(tag, 1, value, default);
-    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2>(tag, 2, default, value);
-    #endregion
-
+  #region Tagged 2 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R, T2> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2>(@this.Tag, f(@this.Value1));
     public static Tagged<E, T1, R> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R>(@this.Tag, f(@this.Value2));
@@ -194,6 +195,17 @@ namespace Endofunk.FX {
   }
   #endregion
 
+  #region Tagged 2 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag) where E : Enum => new Tagged<E, T1, T2>(tag, 0, default, default);
+    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2>(tag, 1, value, default);
+    public static Tagged<E, T1, T2> Tagged<E, T1, T2>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2>(tag, 2, default, value);
+    #endregion
+  }
+  #endregion
+
+
   #region Tagged 3
   public sealed class Tagged<E, T1, T2, T3> where E : Enum {
     public readonly E Tag;
@@ -211,15 +223,10 @@ namespace Endofunk.FX {
     public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}>[{Value1}, {Value2}, {Value3}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-    #region Syntactic Sugar
-    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 0, default, default, default);
-    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 1, value, default, default);
-    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 2, default, value, default);
-    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 3, default, default, value);
-    #endregion
-
+  #region Tagged 3 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R, T2, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3>(@this.Tag, f(@this.Value1));
     public static Tagged<E, T1, R, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3>(@this.Tag, f(@this.Value2));
@@ -277,6 +284,18 @@ namespace Endofunk.FX {
   }
   #endregion
 
+  #region Tagged 3 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 0, default, default, default);
+    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 1, value, default, default);
+    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 2, default, value, default);
+    public static Tagged<E, T1, T2, T3> Tagged<E, T1, T2, T3>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3>(tag, 3, default, default, value);
+    #endregion
+  }
+  #endregion
+
+
   #region Tagged 4
   public sealed class Tagged<E, T1, T2, T3, T4> where E : Enum {
     public readonly E Tag;
@@ -297,16 +316,10 @@ namespace Endofunk.FX {
     public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-    #region Syntactic Sugar
-    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 0, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 1, value, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 2, default, value, default, default);
-    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 3, default, default, value, default);
-    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 4, default, default, default, value);
-    #endregion
-
+  #region Tagged 4 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R, T2, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4>(@this.Tag, f(@this.Value1));
     public static Tagged<E, T1, R, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4>(@this.Tag, f(@this.Value2));
@@ -370,6 +383,19 @@ namespace Endofunk.FX {
   }
   #endregion
 
+  #region Tagged 4 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 0, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 1, value, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 2, default, value, default, default);
+    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 3, default, default, value, default);
+    public static Tagged<E, T1, T2, T3, T4> Tagged<E, T1, T2, T3, T4>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4>(tag, 4, default, default, default, value);
+    #endregion
+  }
+  #endregion
+
+
   #region Tagged 5
   public sealed class Tagged<E, T1, T2, T3, T4, T5> where E : Enum {
     public readonly E Tag;
@@ -393,17 +419,10 @@ namespace Endofunk.FX {
     public T5 Value5 => !HasValue5 ? throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue5;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}, {typeof(T5).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}, {Value5}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-    #region Syntactic Sugar
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 0, default, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 1, value, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 2, default, value, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 3, default, default, value, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 4, default, default, default, value, default);
-    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T5 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 5, default, default, default, default, value);
-    #endregion
-
+  #region Tagged 5 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R, T2, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4, T5>(@this.Tag, f(@this.Value1));
     public static Tagged<E, T1, R, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4, T5>(@this.Tag, f(@this.Value2));
@@ -473,6 +492,20 @@ namespace Endofunk.FX {
   }
   #endregion
 
+  #region Tagged 5 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 0, default, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 1, value, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 2, default, value, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 3, default, default, value, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 4, default, default, default, value, default);
+    public static Tagged<E, T1, T2, T3, T4, T5> Tagged<E, T1, T2, T3, T4, T5>(E tag, T5 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5>(tag, 5, default, default, default, default, value);
+    #endregion
+  }
+  #endregion
+
+
   #region Tagged 6
   public sealed class Tagged<E, T1, T2, T3, T4, T5, T6> where E : Enum {
     public readonly E Tag;
@@ -499,18 +532,10 @@ namespace Endofunk.FX {
     public T6 Value6 => !HasValue6 ? throw new InvalidOperationException($"Can't return {typeof(T6).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue6;
     public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}, {typeof(T5).Simplify()}, {typeof(T6).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}, {Value5}, {Value6}]";
   }
+  #endregion
 
-  public static partial class Prelude {
-    #region Syntactic Sugar
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 0, default, default, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 1, value, default, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 2, default, value, default, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 3, default, default, value, default, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 4, default, default, default, value, default, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T5 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 5, default, default, default, default, value, default);
-    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T6 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 6, default, default, default, default, default, value);
-    #endregion
-
+  #region Tagged 6 - Extensions
+  public static partial class TaggedExtensions {
     #region Functor
     public static Tagged<E, R, T2, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4, T5, T6>(@this.Tag, f(@this.Value1));
     public static Tagged<E, T1, R, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4, T5, T6>(@this.Tag, f(@this.Value2));
@@ -582,6 +607,20 @@ namespace Endofunk.FX {
     public static Tagged<E, T1, T2, T3, R, T5, T6> SelectMany<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5, T6>> f) where E : Enum => @this.FlatMap(f);
     public static Tagged<E, T1, T2, T3, T4, R, T6> SelectMany<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R, T6>> f) where E : Enum => @this.FlatMap(f);
     public static Tagged<E, T1, T2, T3, T4, T5, R> SelectMany<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T6), Tagged<E, T1, T2, T3, T4, T5, R>> f) where E : Enum => @this.FlatMap(f);
+    #endregion
+  }
+  #endregion
+
+  #region Tagged6 - Prelude
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 0, default, default, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T1 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 1, value, default, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T2 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 2, default, value, default, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T3 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 3, default, default, value, default, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T4 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 4, default, default, default, value, default, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T5 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 5, default, default, default, default, value, default);
+    public static Tagged<E, T1, T2, T3, T4, T5, T6> Tagged<E, T1, T2, T3, T4, T5, T6>(E tag, T6 value) where E : Enum => new Tagged<E, T1, T2, T3, T4, T5, T6>(tag, 6, default, default, default, default, default, value);
     #endregion
   }
   #endregion

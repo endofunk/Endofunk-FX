@@ -59,8 +59,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class ReaderExtensions {
     #region Functor
     public static Reader<R, B> Map<R, A, B>(this Reader<R, A> @this, Func<A, B> f) => Reader<R, B>.Of(@this.RunReader.Compose(f));
     public static Reader<R, B> Map<R, A, B>(this Func<A, B> f, Reader<R, A> @this) => Reader<R, B>.Of(@this.RunReader.Compose(f));
@@ -106,22 +105,8 @@ namespace Endofunk.FX {
     public static Reader<S, R> LiftA<S, A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Reader<S, A> a, Reader<S, B> b, Reader<S, C> c, Reader<S, D> d, Reader<S, E> e, Reader<S, F> f, Reader<S, G> g, Reader<S, H> h, Reader<S, I> i, Reader<S, J> j) => @this.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
-    #region Traverse
-    public static Reader<S, IEnumerable<R>> TraverseM<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(ToReader<S, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Reader<S, IEnumerable<R>> TraverseA<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(ToReader<S, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => ToReader<S, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
-    #endregion
-
-    #region Sequence
-    public static Reader<S, IEnumerable<A>> SequenceM<S, A>(IEnumerable<Reader<S, A>> @this) => @this.TraverseM(Id<Reader<S, A>>());
-    public static Reader<S, IEnumerable<A>> SequenceA<S, A>(IEnumerable<Reader<S, A>> @this) => @this.TraverseA(Id<Reader<S, A>>());
-    #endregion 
-
     #region DebugPrint
     public static void DebugPrint<R, A>(this Reader<R, A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Syntactic Sugar
-    public static Reader<S, A> ToReader<S, A>(this A a) => Reader<S, A>.Pure(a);
     #endregion
 
     #region Linq Conformance
@@ -130,5 +115,14 @@ namespace Endofunk.FX {
     public static Reader<S, R> SelectMany<S, A, B, R>(this Reader<S, A> @this, Func<A, Reader<S, B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToReader<S, R>()));
     #endregion
 
+    #region ToReader
+    public static Reader<S, A> ToReader<S, A>(this A a) => Reader<S, A>.Pure(a);
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Func<A, Reader<S, A>> ToReader<S, A>() => a => Reader<S, A>.Pure(a);
+    #endregion
   }
 }

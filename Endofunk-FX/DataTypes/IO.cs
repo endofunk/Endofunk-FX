@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -35,7 +36,10 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
+  public static partial class IOExtensions {
+    #region Fold
+    public static R Fold<A, R>(this IO<A> @this, Func<A, R> fn) => fn(@this.Compute());
+    #endregion
 
     #region Functor
     public static IO<B> Map<A, B>(this IO<A> @this, Func<A, B> fn) => IO<B>.Of(() => fn(@this.Compute()));
@@ -85,18 +89,24 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static IO<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, IO<R>> f) => @this.Fold(ToIO(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static IO<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, IO<R>> f) => @this.Fold(ToIO(Enumerable.Empty<R>()), (a, e) => ToIO(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<IO<B>> Traverse<A, B>(this IO<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Maybe<IO<B>> Traverse<A, B>(this IO<A> @this, Func<A, Maybe<B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Result<IO<B>> Traverse<A, B>(this IO<A> @this, Func<A, Result<B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Identity<IO<B>> Traverse<A, B>(this IO<A> @this, Func<A, Identity<B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Reader<R, IO<B>> Traverse<R, A, B>(this IO<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Either<L, IO<B>> Traverse<L, A, B>(this IO<A> @this, Func<A, Either<L, B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Validation<L, IO<B>> Traverse<L, A, B>(this IO<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(a => f(a).Map(ToIO));
     #endregion
 
     #region Sequence
-    public static IO<IEnumerable<A>> SequenceM<A>(IEnumerable<IO<A>> @this) => @this.TraverseM(Id<IO<A>>());
-    public static IO<IEnumerable<A>> SequenceA<A>(IEnumerable<IO<A>> @this) => @this.TraverseA(Id<IO<A>>());
+    public static IEnumerable<IO<A>> Sequence<A>(IO<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Maybe<IO<A>> Sequence<A>(IO<Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Result<IO<A>> Sequence<A>(IO<Result<A>> @this) => @this.Traverse(Id<Result<A>>());
+    public static Identity<IO<A>> Sequence<A>(IO<Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static Reader<R, IO<A>> Sequence<R, A>(IO<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Either<L, IO<A>> Sequence<L, A>(IO<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
+    public static Validation<L, IO<A>> Sequence<L, A>(IO<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
     #endregion 
-
-    #region Syntactic Sugar
-    public static IO<A> ToIO<A>(this A a) => IO<A>.Of(() => a);
-    #endregion
 
     #region Linq Conformance
     public static IO<R> Select<A, R>(this IO<A> @this, Func<A, R> fn) => @this.Map(fn);
@@ -104,5 +114,14 @@ namespace Endofunk.FX {
     public static IO<R> SelectMany<A, B, R>(this IO<A> @this, Func<A, IO<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIO()));
     #endregion
 
+    #region ToIO
+    public static IO<A> ToIO<A>(this A a) => IO<A>.Of(() => a);
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Func<A, IO<A>> ToIO<A>() => a => a.ToIO();
+    #endregion
   }
 }

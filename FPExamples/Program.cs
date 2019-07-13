@@ -423,6 +423,15 @@ namespace FPExamples {
 
       strings.Map(Fun((string s) => s.ToUpper()));
 
+      var hdhddh = numbers.Map(x => Just(x).Traverse(y => y.ToResult()));
+
+      hdhddh
+        .Sequence()
+        .Map(x => x.Sequence())
+        .Match(
+          failed: e => Console.WriteLine(),
+          success: x => x.AsEnumerable().ForEach(y => y.DebugPrint())
+        );
 
     }
   }

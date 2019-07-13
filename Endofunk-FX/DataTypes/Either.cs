@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -64,20 +65,17 @@ namespace Endofunk.FX {
     public IEnumerable<R> AsEnumerable() {
       if (IsRight) yield return RValue;
     }
-
     public override string ToString() => $"Either<{typeof(L).Simplify()}, {typeof(R).Simplify()}>[{State}: {this.Fold(s => s.ToString(), r => r.ToString())}]";
-  }
+  } 
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class EitherExtensions {
     #region Either - Fold
     public static R2 FoldR<L, R, R2>(this Either<L, R> @this, R2 identity, Func<R2, R, R2> fn) {
       var accumulator = identity;
       foreach (R element in @this.AsEnumerable()) { accumulator = fn(accumulator, element); }
       return accumulator;
     }
-
     public static R2 Fold<L, R, R2>(this Either<L, R> @this, Func<L, R2> left, Func<R, R2> right) => @this.IsRight ? right(@this.RValue) : left(@this.LValue);
     #endregion
 
@@ -170,19 +168,29 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static Either<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Either<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Right<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(left: l => Enumerable.Empty<Either<L, B>>().Append(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Identity<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Identity<B>> f) => @this.Fold(left: l => Identity<Either<L, B>>.Of(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Result<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Result<B>> f) => @this.Fold(left: l => Success(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static IO<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, IO<B>> f) => @this.Fold(left: l => Left<L, B>(l).ToIO(), right: a => f(a).Map(Right<L, B>()));
+    public static Reader<R, Either<L, B>> Traverse<L, R, A, B>(this Either<L, A> @this, Func<A, Reader<R, B>> f) => @this.Fold(left: l => Reader<R, Either<L, B>>.Pure(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Maybe<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Maybe<B>> f) => @this.Fold(left: l => Just(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Validation<L2, Either<L, B>> Traverse<L2, L, A, B>(this Either<L, A> @this, Func<A, Validation<L2, B>> f) => @this.Fold(left: l => Success<L2, Either<L, B>>(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     #endregion
 
     #region Sequence
-    public static Either<L, IEnumerable<A>> SequenceM<L, A>(IEnumerable<Either<L, A>> @this) => @this.TraverseM(Id<Either<L, A>>());
-    public static Either<L, IEnumerable<A>> SequenceA<L, A>(IEnumerable<Either<L, A>> @this) => @this.TraverseA(Id<Either<L, A>>());
+    public static IEnumerable<Either<L, A>> Sequence<L, A>(Either<L, IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Identity<Either<L, A>> Sequence<L, A>(Either<L, Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static Result<Either<L, A>> Sequence<L, A>(Either<L, Result<A>> @this) => @this.Traverse(Id<Result<A>>());
+    public static IO<Either<L, A>> Sequence<L, A>(Either<L, IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Either<L, A>> Sequence<L, R, A>(Either<L, Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Maybe<Either<L, A>> Sequence<L, A>(Either<L, Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Validation<L2, Either<L, A>> Sequence<L2, L, A>(Either<L, Validation<L2, A>> @this) => @this.Traverse(Id<Validation<L2, A>>());
     #endregion 
 
     #region Match
     public static void Match<L, R>(this Either<L, R> @this, Action<L> left, Action<R> right) {
       if (@this.IsRight) right(@this.RValue);
-      else left(@this.LValue); 
+      else left(@this.LValue);
     }
     public static R2 Match<L, R, R2>(this Either<L, R> @this, Func<L, R2> left, Func<R, R2> right) => (@this.IsRight) ? right(@this.RValue) : left(@this.LValue);
     #endregion
@@ -191,19 +199,24 @@ namespace Endofunk.FX {
     public static void DebugPrint<L, R>(this Either<L, R> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Syntactic Sugar - Right / Left
-    public static Either<L, R> Right<L, R>(R value) => Either<L, R>.Right(value);
-    public static Either<L, R> Left<L, R>(L value) => Either<L, R>.Left(value);
-    public static Either<L, R> ToEither<L, R>(this R @this) => Right<L, R>(@this);
-    public static Func<A, Either<L, B>> ToEither<L, A, B>(this Func<A, B> @this) => a => Right<L, B>(@this(a));
-    #endregion
-
     #region Linq Conformance
     public static Either<L, R2> Select<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
     public static Either<L, R2> SelectMany<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMap(fn);
     public static Either<L, R2> SelectMany<L, R, R1, R2>(this Either<L, R> @this, Func<R, Either<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToEither<L, R2>()));
     #endregion
 
+    #region ToEither
+    public static Either<L, R> ToEither<L, R>(this R @this) => Right<L, R>(@this);
+    public static Func<A, Either<L, B>> ToEither<L, A, B>(this Func<A, B> @this) => a => Right<L, B>(@this(a));
+    #endregion
   }
 
+  public static partial class Prelude {
+    #region Syntactic Sugar - Right / Left
+    public static Either<L, R> Right<L, R>(R value) => Either<L, R>.Right(value);
+    public static Either<L, R> Left<L, R>(L value) => Either<L, R>.Left(value);
+    public static Func<R, Either<L, R>> Right<L, R>() => value => Either<L, R>.Right(value);
+    public static Func<L, Either<L, R>> Left<L, R>() => value => Either<L, R>.Left(value);
+    #endregion
+  }
 }

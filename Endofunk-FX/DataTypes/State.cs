@@ -33,7 +33,7 @@ namespace Endofunk.FX {
     public static State<S, A> Of(Func<S, (A, S)> run) => new State<S, A>(run);
   }
 
-  public static partial class Prelude {
+  public static partial class StateExtensions {
     #region Functor
     public static State<S, B> Map<S, A, B>(this State<S, A> @this, Func<A, B> fn) {
       return new State<S, B>(s => {
@@ -90,13 +90,19 @@ namespace Endofunk.FX {
     public static void DebugPrint<S, A>(this State<S, A> @this, string title = "") => Console.WriteLine("{0}{1}State<{2},{3}>[{4}]", title, title.IsEmpty() ? "" : " ---> ", typeof(S).Simplify(), typeof(A).Simplify(), @this.Run);
     #endregion
 
-    #region Syntactic Sugar
-    public static State<S, A> ToState<S, A>(this Func<S, (A, S)> fn) => State<S, A>.Of(fn);
-    #endregion
-
     #region Linq Conformance
     public static State<S, R> Select<S, A, R>(this State<S, A> @this, Func<A, R> fn) => @this.Map(fn);
     //public static State<S, R> SelectMany<S, A, B, R>(this State<S, A> @this, Func<A, State<S, B>> fn, Func<A, B, R> select) => State<S, R>.Of(s => @this.FlatMap(a => fn(a).FlatMap<S, B, R>(b => State<S, R>.Of(select(a, b)))));
+    #endregion
+
+    #region ToState
+    public static State<S, A> ToState<S, A>(this Func<S, (A, S)> fn) => State<S, A>.Of(fn);
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+
     #endregion
   }
 }

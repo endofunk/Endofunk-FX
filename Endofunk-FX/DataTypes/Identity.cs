@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -56,8 +57,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class IdentityExtensions {
     #region Fold
     public static R Fold<A, R>(this Identity<A> @this, Func<A, R> fn) => fn(@this.Value);
     #endregion
@@ -122,19 +122,29 @@ namespace Endofunk.FX {
     public static Identity<R> LiftA<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Identity<A> a, Identity<B> b, Identity<C> c, Identity<D> d, Identity<E> e, Identity<F> f, Identity<G> g, Identity<H> h, Identity<I> i, Identity<J> j) => @this.Curry().Map(a).Apply(b).Apply(c).Apply(d).Apply(e).Apply(f).Apply(g).Apply(h).Apply(i).Apply(j);
     #endregion
 
-    #region Selective Applicative Functor
-    public static Identity<B> Selective<A, B>(this Identity<Either<A, B>> @this, Identity<Func<A, B>> f) => @this.Value.IsRight ? Of(@this.Value.RValue) : Of(f.Value(@this.Value.LValue));
-    #endregion
-
     #region Traverse
-    public static Identity<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Identity<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => Of(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<Identity<B>> Traverse<A, B>(this Identity<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Maybe<Identity<B>> Traverse<A, B>(this Identity<A> @this, Func<A, Maybe<B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Result<Identity<B>> Traverse<A, B>(this Identity<A> @this, Func<A, Result<B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static IO<Identity<B>> Traverse<A, B>(this Identity<A> @this, Func<A, IO<B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Reader<R, Identity<B>> Traverse<R, A, B>(this Identity<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Either<L, Identity<B>> Traverse<L, A, B>(this Identity<A> @this, Func<A, Either<L, B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Validation<L, Identity<B>> Traverse<L, A, B>(this Identity<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(a => f(a).Map(Of));
     #endregion
 
     #region Sequence
-    public static Identity<IEnumerable<A>> SequenceM<A>(IEnumerable<Identity<A>> @this) => @this.TraverseM(Id<Identity<A>>());
-    public static Identity<IEnumerable<A>> SequenceA<A>(IEnumerable<Identity<A>> @this) => @this.TraverseA(Id<Identity<A>>());
+    public static IEnumerable<Identity<A>> Sequence<A>(Identity<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Maybe<Identity<A>> Sequence<A>(Identity<Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Result<Identity<A>> Sequence<A>(Identity<Result<A>> @this) => @this.Traverse(Id<Result<A>>());
+    public static IO<Identity<A>> Sequence<A>(Identity<IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Identity<A>> Sequence<R, A>(Identity<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Either<L, Identity<A>> Sequence<L, A>(Identity<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
+    public static Validation<L, Identity<A>> Sequence<L, A>(Identity<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
     #endregion 
+
+    #region Selective Applicative Functor
+    public static Identity<B> Selective<A, B>(this Identity<Either<A, B>> @this, Identity<Func<A, B>> f) => @this.Value.IsRight ? Of(@this.Value.RValue) : Of(f.Value(@this.Value.LValue));
+    #endregion
 
     #region Match
     public static void Match<A>(this Identity<A> @this, Action<A> f) => f(@this.Value);
@@ -143,12 +153,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<A>(this Identity<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Syntactic Sugar
-    public static Identity<A> ToIdentity<A>(this A a) => Identity<A>.Of(a);
-    public static Identity<A> Of<A>(A a) => Identity<A>.Of(a);
-    public static Func<A, Identity<B>> ToIdentity<A, B>(this Func<A, B> f) => a => Of<B>(f(a));
     #endregion
 
     #region Linq Conformance
@@ -161,5 +165,16 @@ namespace Endofunk.FX {
     public static A Get<A>(this Identity<A> @this) => @this.Value;
     #endregion
 
+    #region ToIdentity
+    public static Func<A, Identity<B>> ToIdentity<A, B>(this Func<A, B> f) => a => Of<B>(f(a));
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar
+    public static Identity<A> ToIdentity<A>(this A a) => Identity<A>.Of(a);
+    public static Identity<A> Of<A>(A a) => Identity<A>.Of(a);
+    public static Func<A, Identity<A>> Of<A>() => a => Of<A>(a);
+    #endregion
   }
 }

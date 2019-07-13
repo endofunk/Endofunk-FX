@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
@@ -84,10 +85,10 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class Prelude {
-
+  public static partial class ResultExtensions {
     #region Fold
     public static R Fold<A, R>(this Result<A> @this, Func<A, R> fn) => @this.IsSuccess ? fn(@this.Value) : default;
+    public static R Fold<A, R>(this Result<A> @this, Func<A, R> success, Func<ExceptionDispatchInfo, R> failed) => @this.IsSuccess ? success(@this.Value) : failed(@this.Failure);
     #endregion
 
     #region Functor
@@ -151,13 +152,23 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static Result<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Result<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => Success(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static IEnumerable<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(failed: e => Enumerable.Empty<Result<B>>().Append(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static Identity<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Identity<B>> f) => @this.Fold(failed: e => Identity<Result<B>>.Of(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static Maybe<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Maybe<B>> f) => @this.Fold(failed: e => Just(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static IO<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IO<B>> f) => @this.Fold(failed: e => Failed<B>(e).ToIO<Result<B>>(), success: a => f(a).Map(Success));
+    public static Reader<R, Result<B>> Traverse<R, A, B>(this Result<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(failed: e => Reader<R, Result<B>>.Pure(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static Either<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Either<L, B>> f) => @this.Fold(failed: e => Right<L, Result<B>>(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static Validation<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(failed: e => Success<L, Result<B>>(Failed<B>(e)), success: a => f(a).Map(Success));
     #endregion
 
     #region Sequence
-    public static Result<IEnumerable<A>> SequenceM<A>(IEnumerable<Result<A>> @this) => @this.TraverseM(Id<Result<A>>());
-    public static Result<IEnumerable<A>> SequenceA<A>(IEnumerable<Result<A>> @this) => @this.TraverseA(Id<Result<A>>());
+    public static IEnumerable<Result<A>> Sequence<A>(Result<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Maybe<Result<A>> Sequence<A>(Result<Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Identity<Result<A>> Sequence<A>(Result<Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static IO<Result<A>> Sequence<A>(Result<IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Result<A>> Sequence<R, A>(Result<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Either<L, Result<A>> Sequence<L, A>(Result<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
+    public static Validation<L, Result<A>> Sequence<L, A>(Result<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
     #endregion 
 
     #region Match
@@ -179,19 +190,6 @@ namespace Endofunk.FX {
     public static void DebugPrint<A>(this Result<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Syntactic Sugar - Success / Failure 
-    public static Result<A> Success<A>(A value) => Result<A>.Success(value);
-    public static Result<A> Failed<A>(ExceptionDispatchInfo error) => Result<A>.Failed(error);
-    public static Result<A> Try<A>(Func<A> f) => Result<A>.Try(f);
-    public static Result<A> ToResult<A>(this A a) => Success(a);
-    public static Result<A> ToResult<A>(this ExceptionDispatchInfo e) => Failed<A>(e);
-    public static Func<A, Result<B>> ToResult<A, B>(this Func<A, B> f) => a => Success<B>(f(a));
-    #endregion
-
-    #region Traverse
-    public static IEnumerable<Result<R>> Traverse<A, R>(this Result<A> @this, Func<A, IEnumerable<R>> fn) => @this.Match(e => List(Failed<R>(e)), t => fn(t).Map(Success));
-    #endregion
-
     #region Linq Conformance
     public static Result<R> Select<A, R>(this Result<A> @this, Func<A, R> fn) => @this.Map(fn);
     public static Result<R> SelectMany<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.FlatMap(fn);
@@ -202,5 +200,21 @@ namespace Endofunk.FX {
     public static A GetOrElse<A>(this Result<A> @this, A other) => @this.IsSuccess ? @this.Value : other;
     #endregion
 
+    #region ToResult
+    public static Result<A> ToResult<A>(this A a) => Success(a);
+    public static Result<A> ToResult<A>(this ExceptionDispatchInfo e) => Failed<A>(e);
+    public static Func<A, Result<B>> ToResult<A, B>(this Func<A, B> f) => a => Success<B>(f(a));
+    #endregion
+  }
+
+  public static partial class Prelude {
+    #region Syntactic Sugar - Success / Failure 
+    public static Result<A> Success<A>(A value) => Result<A>.Success(value);
+    public static Func<A, Result<A>> Success<A>() => a => Success<A>(a);
+    public static Result<A> Failed<A>(ExceptionDispatchInfo error) => Result<A>.Failed(error);
+    public static Func<ExceptionDispatchInfo, Result<A>> Failed<A>() => e => Failed<A>(e);
+    public static Result<A> Try<A>(Func<A> f) => Result<A>.Try(f);
+    public static Func<Func<A>, Result<A>> Try<A>() => f => Try<A>(f);
+    #endregion
   }
 }
