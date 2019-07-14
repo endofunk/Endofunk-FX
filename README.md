@@ -31,6 +31,16 @@ All types support `Functor`, `Applicative Functor` and `Monad`; with `monadic li
 Further enhancements and functional syntactic sugar has been incorporated in a `Endofunc.FX.Prelude` static class to simplify general use of the functional data types.
 
 
+## Nu-get
+
+Nu-get package | Description
+---------------|-------------
+[Endofunk.FX](https://www.nuget.org/packages/Endofunk.FX/) | All of the core data types and functional 'prelude'. 
+[Endofunk.Data](https://www.nuget.org/packages/Endofunk.FX.Data/) | Functional wrapper for SQLClient and SQLite (WIP)
+[Endofunk.Net](https://www.nuget.org/packages/Endofunk.FX.Net/) | Functional wrapper for System.Net (WIP)
+
+## License
+[License.md](https://github.com/endofunk/Endofunk-FX/blob/master/License.md)
 
 # Future Plans
 
