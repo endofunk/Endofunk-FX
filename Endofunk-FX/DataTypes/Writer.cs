@@ -24,18 +24,20 @@
 using System;
 using Unit = System.ValueTuple;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
+  [DataContract]
   public struct Writer<W, A> {
-    internal readonly W _W;
-    internal readonly A _A;
+    [DataMember] internal readonly W _W;
+    [DataMember] internal readonly A _A;
     public (W, A) Run => (_W, _A);
     public W Exec => _W;
     private Writer(W w, A a) => (_W, _A) = (w, a);
     public static Writer<W, A> Of(W w, A a) => new Writer<W, A>(w, a);
     //public static Writer<W, Unit> Tell<W>(W w) => Writer<W, Unit>.Of((Unit(), w));
 
-    public override string ToString() => $"Writer<{typeof(W).Simplify()}, {typeof(A).Simplify()}>[{_W.GetType().Simplify()}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{_W.ToString()}, {_A.ToString()}]";
   }
 
   public static partial class WriterExtensions {

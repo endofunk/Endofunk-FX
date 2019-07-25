@@ -22,8 +22,25 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using static Endofunk.FX.Prelude;
+
 namespace Endofunk.FX {
+
   public static partial class Prelude {
+
+    /// <summary>
+    /// Takes its (first) two arguments in the reverse order.
+    /// flip :: ((a, b) -> c) -> ((b, a) -> c)
+    /// </summary>
+    public static Func<B, A, C> Flip<A, B, C>(Func<A, B, C> f) => (b, a) => f(a, b);
+
+    /// <summary>
+    /// Takes its (first) two arguments in the reverse order.
+    /// flip :: ((a, b) -> c) -> ((b, a) -> c)
+    /// </summary>
+    public static Func<Func<A, B, C>, Func<B, A, C>> Flip<A, B, C>() => f => (b, a) => f(a, b);
 
     #region Lift to Func Form
     public static Func<A> Fun<A>(Func<A> fn) => fn;
@@ -58,6 +75,26 @@ namespace Endofunk.FX {
     public static Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, H>>>>>>> Fun<A, B, C, D, E, F, G, H>(Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, H>>>>>>> fn) => fn;
     #endregion
 
+    /// <summary>
+    /// Left-to-right composition of unary `f` on unary `g`.
+    /// </summary>
+    public static Func<T, T> Compose<T>(Func<T, T> f, Func<T, T> g) => t => g(f(t));
+
+    #region Fix
+    public static Func<T, U> Fix<T, U>(Func<Func<T, U>, Func<T, U>> f) => t => f(Fix(f))(t);
+    #endregion
+
+    #region Until
+    /// <summary>
+    /// Recursively applies a endomorphic function to an argument until a given predicate returns true
+    /// until:: (a -> Bool) -> (a -> a) -> a -> a
+    /// </summary>
+    public static Func<Func<A, A>, Func<A, A>> Until<A>(Func<A, bool> predicate) => f => a => predicate(a) ? a : Until(predicate)(f)(f(a));
+    #endregion
+
+  }
+
+  public static class FunctionExtensions {
     #region Currying
     public static Func<A, Func<B, C>> Curry<A, B, C>(this Func<A, B, C> fn) => a => b => fn(a, b);
     public static Func<A, Func<B, Func<C, D>>> Curry<A, B, C, D>(this Func<A, B, C, D> fn) => a => b => c => fn(a, b, c);
@@ -68,6 +105,18 @@ namespace Endofunk.FX {
     public static Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, I>>>>>>>> Curry<A, B, C, D, E, F, G, H, I>(this Func<A, B, C, D, E, F, G, H, I> fn) => a => b => c => d => e => f => g => h => fn(a, b, c, d, e, f, g, h);
     public static Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, Func<I, J>>>>>>>>> Curry<A, B, C, D, E, F, G, H, I, J>(this Func<A, B, C, D, E, F, G, H, I, J> fn) => a => b => c => d => e => f => g => h => i => fn(a, b, c, d, e, f, g, h, i);
     public static Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, Func<I, Func<J, K>>>>>>>>>> Curry<A, B, C, D, E, F, G, H, I, J, K>(this Func<A, B, C, D, E, F, G, H, I, J, K> fn) => a => b => c => d => e => f => g => h => i => j => fn(a, b, c, d, e, f, g, h, i, j);
+    #endregion
+
+    #region UnCurrying
+    public static Func<A, B, C> UnCurry<A, B, C>(this Func<A, Func<B, C>> fn) => (a, b) => fn(a)(b);
+    public static Func<A, B, C, D> UnCurry<A, B, C, D>(this Func<A, Func<B, Func<C, D>>> fn) => (a, b, c) => fn(a)(b)(c);
+    public static Func<A, B, C, D, E> UnCurry<A, B, C, D, E>(this Func<A, Func<B, Func<C, Func<D, E>>>> fn) => (a, b, c, d) => fn(a)(b)(c)(d);
+    public static Func<A, B, C, D, E, F> UnCurry<A, B, C, D, E, F>(this Func<A, Func<B, Func<C, Func<D, Func<E, F>>>>> fn) => (a, b, c, d, e) => fn(a)(b)(c)(d)(e);
+    public static Func<A, B, C, D, E, F, G> UnCurry<A, B, C, D, E, F, G>(this Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, G>>>>>> fn) => (a, b, c, d, e, f) => fn(a)(b)(c)(d)(e)(f);
+    public static Func<A, B, C, D, E, F, G, H> UnCurry<A, B, C, D, E, F, G, H>(this Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, H>>>>>>> fn) => (a, b, c, d, e, f, g) => fn(a)(b)(c)(d)(e)(f)(g);
+    public static Func<A, B, C, D, E, F, G, H, I> UnCurry<A, B, C, D, E, F, G, H, I>(this Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, I>>>>>>>> fn) => (a, b, c, d, e, f, g, h) => fn(a)(b)(c)(d)(e)(f)(g)(h);
+    public static Func<A, B, C, D, E, F, G, H, I, J> UnCurry<A, B, C, D, E, F, G, H, I, J>(this Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, Func<I, J>>>>>>>>> fn) => (a, b, c, d, e, f, g, h, i) => fn(a)(b)(c)(d)(e)(f)(g)(h)(i);
+    public static Func<A, B, C, D, E, F, G, H, I, J, K> UnCurry<A, B, C, D, E, F, G, H, I, J, K>(this Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, Func<H, Func<I, Func<J, K>>>>>>>>>> fn) => (a, b, c, d, e, f, g, h, i, j) => fn(a)(b)(c)(d)(e)(f)(g)(h)(i)(j);
     #endregion
 
     #region Partial Application
@@ -129,12 +178,22 @@ namespace Endofunk.FX {
     #endregion
 
     #region Pipe
-    public static B Pipe<A, B>(this A a, Func<A, B> f) => f(a);
-    public static B Pipe<A, B>(this Func<A, B> f, A a) => f(a);
-    #endregion
-
-    #region Fix
-    public static Func<T, U> Fix<T, U>(Func<Func<T, U>, Func<T, U>> f) => t => f(Fix(f))(t);
+    public static R Pipe<A, R>(this A a, Func<A, R> f) => f(a);
+    public static R Pipe<A, R>(this Func<A, R> f, A a) => f(a);
+    public static R Pipe<A, B, R>(this A a, Func<A, B> f1, Func<B, R> f2) => f2(f1(a));
+    public static R Pipe<A, B, C, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, R> f3) => f3(f2(f1(a)));
+    public static R Pipe<A, B, C, D, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, R> f4) => f4(f3(f2(f1(a))));
+    public static R Pipe<A, B, C, D, E, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, R> f5) => f5(f4(f3(f2(f1(a)))));
+    public static R Pipe<A, B, C, D, E, F, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, R> f6) => f6(f5(f4(f3(f2(f1(a))))));
+    public static R Pipe<A, B, C, D, E, F, G, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, R> f7) => f7(f6(f5(f4(f3(f2(f1(a)))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, R> f8) => f8(f7(f6(f5(f4(f3(f2(f1(a))))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, I, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, R> f9) => f9(f8(f7(f6(f5(f4(f3(f2(f1(a)))))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, I, J, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, J> f9, Func<J, R> f10) => f10(f9(f8(f7(f6(f5(f4(f3(f2(f1(a))))))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, I, J, K, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, J> f9, Func<J, K> f10, Func<K, R> f11) => f11(f10(f9(f8(f7(f6(f5(f4(f3(f2(f1(a)))))))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, I, J, K, L, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, J> f9, Func<J, K> f10, Func<K, L> f11, Func<L, R> f12) => f12(f11(f10(f9(f8(f7(f6(f5(f4(f3(f2(f1(a))))))))))));
+    public static R Pipe<A, B, C, D, E, F, G, H, I, J, K, L, M, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, J> f9, Func<J, K> f10, Func<K, L> f11, Func<L, M> f12, Func<M, R> f13) => f13(f12(f11(f10(f9(f8(f7(f6(f5(f4(f3(f2(f1(a)))))))))))));
     #endregion
   }
+
+
 }

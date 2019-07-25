@@ -30,59 +30,62 @@ namespace Endofunk.FX {
 
   public static partial class IEnumerableExtensions {
     #region Zip
-    public static IEnumerable<S4> Zip<S1, S2, S3, S4>(this IEnumerable<S1> s1, IEnumerable<S2> s2, IEnumerable<S3> s3, Func<S1, S2, S3, S4> f) {
-      var (a, b, c) = (s1.GetEnumerator(), s2.GetEnumerator(), s3.GetEnumerator());
+    public static IEnumerable<R> Zip<A, B, C, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, Func<A, B, C, R> f) {
+      var (a, b, c) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator());
       while (a.MoveNext() && b.MoveNext() && c.MoveNext()) {
         yield return f(a.Current, b.Current, c.Current);
       }
     }
 
-    public static IEnumerable<S5> Zip<S1, S2, S3, S4, S5>(this IEnumerable<S1> s1, IEnumerable<S2> s2, IEnumerable<S3> s3, IEnumerable<S4> s4, Func<S1, S2, S3, S4, S5> f) {
-      var (a, b, c, d) = (s1.GetEnumerator(), s2.GetEnumerator(), s3.GetEnumerator(), s4.GetEnumerator());
+    public static IEnumerable<R> Zip<A, B, C, D, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, IEnumerable<D> sd, Func<A, B, C, D, R> f) {
+      var (a, b, c, d) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator(), sd.GetEnumerator());
       while (a.MoveNext() && b.MoveNext() && c.MoveNext() && d.MoveNext()) {
         yield return f(a.Current, b.Current, c.Current, d.Current);
       }
     }
+
+    public static (IEnumerable<A>, IEnumerable<B>) UnZip<A, B>(this IEnumerable<(A, B)> sab) => sab.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2)));
+    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>) UnZip<A, B, C>(this IEnumerable<(A, B, C)> sabc) => sabc.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3)));
+    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>, IEnumerable<D>) UnZip<A, B, C, D>(this IEnumerable<(A, B, C, D)> sabcd) => sabcd.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>(), Enumerable.Empty<D>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3), a.Item4.Append(e.Item4)));
     #endregion
 
     #region Foreach
     public static void ForEach<A>(this IEnumerable<A> @this, Action<A> f) {
       foreach (A e in @this) { f(e); }
     }
+    #endregion
 
-    public static void ForEachBack<A>(this IEnumerable<A> @this, Action<A> f) {
-      for (int i = @this.Count() - 1; i >= 0; i--) { f(@this.ElementAt(i)); }
-    }
+    #region Head / Tail
+    public static A Head<A>(this IEnumerable<A> @this) => @this.First();
+    public static IEnumerable<A> Tail<A>(this IEnumerable<A> @this) => @this.Skip(1);
     #endregion
 
     #region IEnumerable - Fold
-    public static U Fold<T, U>(this IEnumerable<T> ts, U identity, Func<U, T, U> fn) {
-      var accumulator = identity;
-      ts.ForEach(element => accumulator = fn(accumulator, element));
-      return accumulator;
-    }
-    public static Func<IEnumerable<T>, U> Fold<T, U>(U identity, Func<U, T, U> fn) => ts => ts.Fold<T, U>(identity, fn);
-    public static U FoldBack<T, U>(this IEnumerable<T> ts, U identity, Func<U, T, U> fn) {
-      var accumulator = identity;
-      ts.ForEachBack(element => accumulator = fn(accumulator, element));
-      return accumulator;
-    }
+    public static R Fold<A, R>(this IEnumerable<A> xs, R id, Func<R, A, R> fn) => xs.Aggregate(id, fn);
+    public static Func<IEnumerable<A>, R> Fold<A, R>(R id, Func<R, A, R> fn) => ts => ts.Aggregate<A, R>(id, fn);
+    public static R FoldBack<A, R>(this IEnumerable<A> xs, R id, Func<R, A, R> fn) => xs.Reverse().Aggregate(id, fn);
     #endregion
 
     #region Functor
-    public static IEnumerable<U> Map<T, U>(this Func<T, U> fn, IEnumerable<T> ts) => ts.Map(fn);
-    public static IEnumerable<U> Map<T, U>(this IEnumerable<T> ts, Func<T, U> fn) => ts.Fold(Enumerable.Empty<U>(), (a, e) => a.Append(fn(e)));
+    public static IEnumerable<R> Map<A, R>(this Func<A, R> fn, IEnumerable<A> xs) => xs.Map(fn);
+    public static IEnumerable<R> Map<A, R>(this IEnumerable<A> xs, Func<A, R> fn) => xs.Aggregate(Enumerable.Empty<R>(), (a, e) => a.Append(fn(e)));
+    public static Func<IEnumerable<A>, IEnumerable<R>> Map<A, R>(this Func<A, R> fn) => xs => xs.Map(fn);
+    #endregion
+
+    #region MapReduce {
+    public static R MapReduce<A, B, R>(this IEnumerable<A> xs, Func<A, B> f, R id, Func<R, B, R> fn) => xs.Fold(id, (r, a) => fn(r, f(a)));
+    public static Func<IEnumerable<A>, R> MapReduce<A, B, R>(this Func<A, B> f, R id, Func<R, B, R> fn) => xs => xs.MapReduce(f, id, fn);
     #endregion
 
     #region Flatten
-    public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> ts) => ts.Fold(Enumerable.Empty<T>(), (a, e) => a.Concat(e));
+    public static IEnumerable<A> Flatten<A>(this IEnumerable<IEnumerable<A>> xs) => xs.Aggregate(Enumerable.Empty<A>(), (a, e) => a.Concat(e));
     #endregion
 
     #region Monad
-    public static IEnumerable<U> FlatMap<T, U>(this Func<T, IEnumerable<U>> fn, IEnumerable<T> ts) => ts.FlatMap(fn);
-    public static IEnumerable<U> FlatMap<T, U>(this IEnumerable<T> ts, Func<T, IEnumerable<U>> fn) => ts.Map(fn).Flatten();
-    public static Func<IEnumerable<A>, IEnumerable<B>> FlatMap<A, B>(this Func<A, IEnumerable<B>> f) => a => a.FlatMap(f);
-    public static IEnumerable<U> Bind<T, U>(this IEnumerable<T> ts, Func<T, IEnumerable<U>> fn) => ts.FlatMap(fn);
+    public static IEnumerable<R> FlatMap<A, R>(this Func<A, IEnumerable<R>> fn, IEnumerable<A> ts) => ts.FlatMap(fn);
+    public static IEnumerable<R> FlatMap<A, R>(this IEnumerable<A> ts, Func<A, IEnumerable<R>> fn) => ts.Map(fn).Flatten();
+    public static Func<IEnumerable<A>, IEnumerable<R>> FlatMap<A, R>(this Func<A, IEnumerable<R>> f) => a => a.FlatMap(f);
+    public static IEnumerable<R> Bind<A, R>(this IEnumerable<A> ts, Func<A, IEnumerable<R>> fn) => ts.FlatMap(fn);
     #endregion
 
     #region Kleisli Composition
@@ -90,27 +93,27 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
-    public static IEnumerable<R> LiftM<A, R>(this Func<A, R> @this, IEnumerable<A> a) => a.FlatMap(xa => List(@this(xa)));
-    public static IEnumerable<R> LiftM<A, B, R>(this Func<A, B, R> @this, IEnumerable<A> a, IEnumerable<B> b) => a.FlatMap(xa => b.FlatMap(xb => List(@this(xa, xb))));
-    public static IEnumerable<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => List(@this(xa, xb, xc)))));
-    public static IEnumerable<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => List(@this(xa, xb, xc, xd))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => List(@this(xa, xb, xc, xd, xe)))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => List(@this(xa, xb, xc, xd, xe, xf))))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => List(@this(xa, xb, xc, xd, xe, xf, xg)))))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => List(@this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h, IEnumerable<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => List(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
-    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h, IEnumerable<I> i, IEnumerable<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => List(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
+    public static IEnumerable<R> LiftM<A, R>(this Func<A, R> @this, IEnumerable<A> a) => a.FlatMap(xa => EnumerableNew(@this(xa)));
+    public static IEnumerable<R> LiftM<A, B, R>(this Func<A, B, R> @this, IEnumerable<A> a, IEnumerable<B> b) => a.FlatMap(xa => b.FlatMap(xb => EnumerableNew(@this(xa, xb))));
+    public static IEnumerable<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => EnumerableNew(@this(xa, xb, xc)))));
+    public static IEnumerable<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => EnumerableNew(@this(xa, xb, xc, xd))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => EnumerableNew(@this(xa, xb, xc, xd, xe)))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => EnumerableNew(@this(xa, xb, xc, xd, xe, xf))))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => EnumerableNew(@this(xa, xb, xc, xd, xe, xf, xg)))))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => EnumerableNew(@this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h, IEnumerable<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => EnumerableNew(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
+    public static IEnumerable<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, IEnumerable<A> a, IEnumerable<B> b, IEnumerable<C> c, IEnumerable<D> d, IEnumerable<E> e, IEnumerable<F> f, IEnumerable<G> g, IEnumerable<H> h, IEnumerable<I> i, IEnumerable<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => EnumerableNew(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
     #endregion
 
     #region Filterable
-    public static IEnumerable<T> Filter<T>(this Func<T, bool> fn, IEnumerable<T> ts) => ts.Filter(fn);
-    public static IEnumerable<T> Filter<T>(this IEnumerable<T> ts, Func<T, bool> fn) => ts.Fold(Enumerable.Empty<T>(), (a, e) => fn(e) ? a.Append(e) : a);
+    public static IEnumerable<A> Filter<A>(this Func<A, bool> fn, IEnumerable<A> xs) => xs.Filter(fn);
+    public static IEnumerable<A> Filter<A>(this IEnumerable<A> xs, Func<A, bool> fn) => xs.Fold(Enumerable.Empty<A>(), (a, e) => fn(e) ? a.Append(e) : a);
     #endregion
 
     #region Applicative Functor
-    public static IEnumerable<U> Apply<T, U>(this IEnumerable<T> ts, IEnumerable<Func<T, U>> fn) => fn.FlatMap(g => ts.Map(x => g(x)));
-    public static IEnumerable<U> Apply<T, U>(this IEnumerable<Func<T, U>> fn, IEnumerable<T> ts) => ts.Apply(fn);
-    public static IEnumerable<T> ToIEnumerable<T>(this T t) => Enumerable.Empty<T>().Append(t);
+    public static IEnumerable<R> Apply<A, R>(this IEnumerable<A> xs, IEnumerable<Func<A, R>> fn) => fn.FlatMap(g => xs.Map(x => g(x)));
+    public static IEnumerable<R> Apply<A, R>(this IEnumerable<Func<A, R>> fn, IEnumerable<A> ts) => ts.Apply(fn);
+    public static IEnumerable<A> ToIEnumerable<A>(this A a) => EnumerableNew(a);
     #endregion
 
     #region Applicative Functor - Lift a function & actions
@@ -180,19 +183,14 @@ namespace Endofunk.FX {
 
     #region Join Recreated
     public static IEnumerable<R> JoinAP<A, B, C, R>(this IEnumerable<A> outer, IEnumerable<B> inner, Func<A, C> outerKey, Func<B, C> innerKey, Func<A, B, R> result) {
-      Func<A, B, List<R>> f = (a, b) => outerKey(a).Equals(innerKey(b)) ? List(result(a, b)) : null;
+      Func<A, B, IEnumerable<R>> f = (a, b) => outerKey(a).Equals(innerKey(b)) ? EnumerableNew(result(a, b)) : Enumerable.Empty<R>();
       return outer.Map(f.Curry()).Apply(inner).Flatten();
     }
 
     public static IEnumerable<R> JoinAP<A, B, R>(this IEnumerable<A> outer, IEnumerable<B> inner, Func<A, B, bool> predicate, Func<A, B, R> result) {
-      Func<A, B, List<R>> f = (a, b) => predicate(a, b) ? List(result(a, b)) : null;
+      Func<A, B, IEnumerable<R>> f = (a, b) => predicate(a, b) ? EnumerableNew(result(a, b)) : Enumerable.Empty<R>();
       return outer.Map(f.Curry()).Apply(inner).Flatten();
     }
-    #endregion
-
-    #region IEnumerable - Collection Helpers (Equivalent to Take, TakeWhile & Skip, SkipWhile)
-    public static IEnumerable<A> Take2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((Enumerable.Empty<A>(), 0), (a, e) => (a.Item2 < quantity) ? (a.Item1.Append(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
-    public static IEnumerable<A> Skip2<A>(this IEnumerable<A> @this, int quantity) => @this.Fold((Enumerable.Empty<A>(), 0), (a, e) => (a.Item2 >= quantity) ? (a.Item1.Append(e), ++a.Item2) : (a.Item1, ++a.Item2)).Item1;
     #endregion
 
     #region String
@@ -200,13 +198,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region DebugPrint
-    public static void DebugPrint<T>(this IEnumerable<T> ts, string title = "", string delimeter = "") {
-      Console.WriteLine("{0}{1}List<{2}>{3}", title, title.IsEmpty() ? "" : " ---> ", typeof(T).Simplify(), ts.Fold($"[{delimeter}", (a, e) => a + $"{e}, {delimeter}").DropLast(delimeter.Length == 0 ? 2 : 3) + $"{delimeter}]");
-    }
-
-    public static void DebugPrint<T>(this IEnumerable<IEnumerable<T>> ts, string title = "", string delimeter = "") {
-      Console.WriteLine("{0}{1}List<{2}>{3}", title, title.IsEmpty() ? "" : " ---> ", typeof(T).Simplify(), ts.Fold("[", (a, e) => a + delimeter + "[" + e.Fold("", (ai, ei) => ai + $"{ei}, ").DropLast(2) + "], ").DropLast(2) + delimeter + "]");
-    }
+    public static void DebugPrint<A>(this IEnumerable<A> xs, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", $"{xs.GetType().Simplify()}[{xs.ToJsonString()}]");
     #endregion
 
     #region ToList
@@ -220,7 +212,11 @@ namespace Endofunk.FX {
     #endregion
 
     #region Syntactic Sugar - Some / None
-    public static List<S> List<S>(params S[] value) => value.ToList<S>();
+    public static List<A> List<A>(params A[] value) => value.ToList<A>();
+    #endregion
+
+    #region New
+    public static IEnumerable<A> EnumerableNew<A>(params A[] elements) => Enumerable.Empty<A>().Concat(elements);
     #endregion
   }
 }

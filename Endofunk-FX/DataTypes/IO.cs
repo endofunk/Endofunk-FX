@@ -44,6 +44,7 @@ namespace Endofunk.FX {
     #region Functor
     public static IO<B> Map<A, B>(this IO<A> @this, Func<A, B> fn) => IO<B>.Of(() => fn(@this.Compute()));
     public static IO<B> Map<A, B>(this Func<A, B> fn, IO<A> @this) => @this.Map(fn);
+    public static Func<IO<A>, IO<B>> Map<A, B>(this Func<A, B> fn) => @this => @this.Map(fn);
     #endregion
 
     #region Monad

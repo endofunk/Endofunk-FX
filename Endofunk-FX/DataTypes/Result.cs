@@ -26,24 +26,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
   #region Result Datatype
+  [DataContract]
   public struct Result<A> {
-    internal readonly A Value;
-    internal readonly ExceptionDispatchInfo Failure;
-    public enum Status { Failure, Success }
-    private readonly Status State;
-    public bool IsSuccess => State == Status.Success;
-    public bool IsFailure => State == Status.Failure;
-    private Result(A value) => (State, Failure, Value) = (Status.Success, default, value);
-    private Result(ExceptionDispatchInfo failure) => (State, Failure, Value) = (Status.Failure, failure, default);
+    [DataMember] internal readonly A Value;
+    [DataMember] internal readonly ExceptionDispatchInfo Failure;
+    [DataMember] public readonly bool IsSuccess;
+    public bool IsFailure => !IsSuccess;
+    private Result(A value) => (IsSuccess, Failure, Value) = (true, default, value);
+    private Result(ExceptionDispatchInfo failure) => (IsSuccess, Failure, Value) = (false, failure, default);
     private Result(Func<A> closure) {
       try {
-        (State, Failure, Value) = (Status.Success, default, closure());
+        (IsSuccess, Failure, Value) = (true, default, closure());
       } catch (Exception e) {
-        (State, Failure, Value) = (Status.Failure, ExceptionDispatchInfo.Capture(e), default);
+        (IsSuccess, Failure, Value) = (false, ExceptionDispatchInfo.Capture(e), default);
       }
     }
 
@@ -52,7 +52,7 @@ namespace Endofunk.FX {
     public static Result<A> Success(A value) => new Result<A>(value);
     public static Result<A> Failed(ExceptionDispatchInfo e) => new Result<A>(e);
     public static Result<A> Try(Func<A> f) => new Result<A>(f);
-    public override string ToString() => $"Result<{typeof(A).Simplify()}>[{State}: {(IsFailure ? Failure.SourceException.Message : this.Fold(s => s.ToString()))}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{IsSuccess}: {(IsFailure ? Failure.SourceException.Message : this.Fold(s => s.ToString()))}]";
 
     public bool Equals(Result<A> other) {
       switch ((IsSuccess, other.IsSuccess)) {

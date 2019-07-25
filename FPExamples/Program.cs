@@ -23,11 +23,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Net;
 using Endofunk.FX;
 using static Endofunk.FX.Prelude;
 using static System.Console;
+using System.Reflection;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+
+using System.Runtime.CompilerServices;
 
 namespace FPExamples {
 
@@ -81,7 +87,61 @@ namespace FPExamples {
     V4, V6
   }
 
+  public static class TypeExtensions {
+    public static string TypeToString(this Type type) => type.Name + (type.IsGenericType ? "<" + type.GenericTypeArguments.Map(x => TypeToString(x)).Join(",") + ">" : "");
+    //public static string TypeToValues<A>(this A a) => a.GetType().IsGenericType ? "[" + TypeToValue(a) + "]"
+
+    public static IEnumerable<MethodInfo> GetExtensionMethodsForType(this Type extendedType) {
+      return AppDomain.CurrentDomain
+                      .GetAssemblies()
+                      .Select(asm => GetExtensionMethods(asm, extendedType))
+                      .Aggregate((a, b) => a.Union(b));
+    }
+
+    private static IEnumerable<MethodInfo> GetExtensionMethods(Assembly assembly, Type extendedType) {
+      var query = from type in assembly.GetTypes()
+                  //where type.IsSealed && !type.IsGenericType && !type.IsNested
+                  //from method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                  from method in type.GetMethods()
+                  where method.IsDefined(typeof(ExtensionAttribute), false)
+                  where method.GetParameters()[0].ParameterType == extendedType
+                  select method;
+      return query;
+    }
+
+    public static bool Contains(this Type type, string method) => GetExtensionMethodsForType(type).Map(x => x.Name).Contains(method);
+  }
+
+  //internal static class ExtensionMethodsHelper {
+  //  private static readonly ConcurrentDictionary<Type, IDictionary<string, MethodInfo>> methodsMap = new ConcurrentDictionary<Type, IDictionary<string, MethodInfo>>();
+
+  //  //[MethodImpl(MethodImplOptions.Synchronized)]
+  //  //public static MethodInfo GetExtensionMethodOrNull(Type type, string methodName) {
+  //  //  var methodsForType = methodsMap.GetOrAdd(type, GetExtensionMethodsForType);
+  //  //  return methodsForType.ContainsKey(methodName)
+  //  //      ? methodsForType[methodName]
+  //  //      : null;
+  //  //}
+
+  //  public static IEnumerable<MethodInfo> GetExtensionMethodsForType(Type extendedType) {
+  //    return AppDomain.CurrentDomain
+  //                    .GetAssemblies()
+  //                    .Select(asm => GetExtensionMethods(asm, extendedType))
+  //                    .Aggregate((a, b) => a.Union(b));
+  //  }
+
+
+  //}
+
   class Program {
+
+
+
+    public delegate Func<int, int> BinaryDelegate();
+
+    public static int Increment(int x) => x + 1;
+
+    public static Func<int, int> Inc = Increment;
 
     //public static 
 
@@ -146,9 +206,9 @@ namespace FPExamples {
 
       WriteLine("---------------");
 
-      List(1, 2, 3)
-        .Map(x => x + 1)
-        .DebugPrint();
+      //List(1, 2, 3)
+        //.Map(x => x + 1)
+        //.DebugPrint();
 
       //Just(1)
       //  .Map(x => x + 2)
@@ -286,7 +346,7 @@ namespace FPExamples {
 
       //var numbers = List(List(1), List(2), List(3), List(4), List(5));
       var numbers = List(1, 2, 3, 4, 5);
-      numbers.DebugPrint();
+      //numbers.DebugPrint();
 
       var right = Right<string, string>("success");
       right.DebugPrint();
@@ -416,7 +476,7 @@ namespace FPExamples {
 
 
       var numbers2 = List(1, 2, 3, 4, 5);
-      numbers.Map(x => x + 1).DebugPrint();
+      //numbers.Map(x => x + 1).DebugPrint();
       numbers.ForEach(Console.WriteLine);
 
       var strings = List("one", "two", "three", "four");
@@ -425,13 +485,70 @@ namespace FPExamples {
 
       var hdhddh = numbers.Map(x => Just(x).Traverse(y => y.ToResult()));
 
-      hdhddh
-        .Sequence()
-        .Map(x => x.Sequence())
-        .Match(
-          failed: e => Console.WriteLine(),
-          success: x => x.AsEnumerable().ForEach(y => y.DebugPrint())
-        );
+      //hdhddh
+        //.Sequence()
+        //.Map(x => x.Sequence())
+        //.Match(
+        //  failed: e => Console.WriteLine(),
+        //  success: x => x.AsEnumerable().ForEach(y => y.DebugPrint())
+        //);
+
+    
+
+
+    var numbs = List(
+        List(1, 2),
+        List(2, 3),
+        List(3),
+        List(4),
+        List(5)
+      );
+
+      var numbs2 = List(
+        List(
+          List(Success(1))
+        ),
+        List(
+          List(Success(2))
+        )
+      );
+
+      numbs.DebugPrint();
+     
+    
+      var dgfhs = 2.Pipe(Increment, Increment, Increment, v => $"answer: {v}");
+      Console.WriteLine(dgfhs);
+
+
+      //let example1 = { $0 * 2 } |> until({$0 > 100}) <| 1
+      //print(example1) // 128
+
+      var answer = Fun<int, int>(x => x * 2).Pipe(Until<int>(x => x > 100)).Pipe(1);
+      Console.WriteLine(answer);
+
+      //var eitherans = Right<string, string>("dsfg");
+
+      //var some = Just(eitherans);
+
+      //var ident = Of(eitherans);
+
+      //var eith = Right<string, Identity<Either<string, string>>>(ident);
+   
+      //Console.WriteLine(eitherans.ToString());
+
+      //Console.WriteLine(some.ToString());
+
+      //Console.WriteLine(ident.ToString());
+
+      //Console.WriteLine(eith.ToString());
+
+      var numbs3 = List("a", "b", "c");
+      var numbs4 = List(List("a"), List("b"), List("c"));
+
+      numbs.DebugPrint();
+      numbs2.DebugPrint();
+      numbs3.DebugPrint();
+      numbs4.DebugPrint();
 
     }
   }

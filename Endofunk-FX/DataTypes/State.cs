@@ -31,6 +31,7 @@ namespace Endofunk.FX {
     public State(Func<S, (A, S)> run) => (Run) = (run);
     public State<S, A> With(Func<S, S> modification) => new State<S, A>(modification.Compose(Run));
     public static State<S, A> Of(Func<S, (A, S)> run) => new State<S, A>(run);
+    public override string ToString() => $"{this.GetType().Simplify()}[{Run.GetType().Simplify()}]";
   }
 
   public static partial class StateExtensions {
@@ -87,7 +88,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region DebugPrint
-    public static void DebugPrint<S, A>(this State<S, A> @this, string title = "") => Console.WriteLine("{0}{1}State<{2},{3}>[{4}]", title, title.IsEmpty() ? "" : " ---> ", typeof(S).Simplify(), typeof(A).Simplify(), @this.Run);
+    public static void DebugPrint<S, A>(this State<S, A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
     #region Linq Conformance

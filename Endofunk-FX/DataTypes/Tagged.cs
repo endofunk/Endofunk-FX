@@ -23,18 +23,20 @@
 
 using System;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
   #region Tagged 1
+  [DataContract]
   public sealed class Tagged<E, T1> where E : Enum {
-    public readonly E Tag;
-    public readonly bool HasValue;
-    private readonly T1 UnionValue;
+    [DataMember] public readonly E Tag;
+    [DataMember] public readonly bool HasValue;
+    [DataMember] private readonly T1 UnionValue;
     private Tagged() { }
     internal Tagged(E tag, bool hasvalue, T1 unionvalue) => (Tag, HasValue, UnionValue) = (tag, hasvalue, unionvalue);
     public T1 Value => !HasValue ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.") : UnionValue;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}>[{Value}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value.ToString()}]";
   }
   #endregion
 
@@ -125,18 +127,19 @@ namespace Endofunk.FX {
 
 
   #region Tagged 2
+  [DataContract]
   public sealed class Tagged<E, T1, T2> where E : Enum {
-    public readonly E Tag;
-    private readonly int Index;
+    [DataMember] public readonly E Tag;
+    [DataMember] private readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2) => (Tag, Index, UnionValue1, UnionValue2) = (tag, index, unionvalue1, unionvalue2);
     public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
     public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}>[{Value1}, {Value2}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}]";
   }
   #endregion
 
@@ -207,21 +210,22 @@ namespace Endofunk.FX {
 
 
   #region Tagged 3
+  [DataContract]
   public sealed class Tagged<E, T1, T2, T3> where E : Enum {
-    public readonly E Tag;
-    private readonly int Index;
+    [DataMember] public readonly E Tag;
+    [DataMember] private readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3) = (tag, index, unionvalue1, unionvalue2, unionvalue3);
     public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
     public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
     public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}>[{Value1}, {Value2}, {Value3}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}]";
   }
   #endregion
 
@@ -297,24 +301,25 @@ namespace Endofunk.FX {
 
 
   #region Tagged 4
+  [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4> where E : Enum {
-    public readonly E Tag;
-    private readonly int Index;
+    [DataMember] public readonly E Tag;
+    [DataMember] private readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4);
     public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
     public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
     public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
     public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}]";
   }
   #endregion
 
@@ -397,19 +402,20 @@ namespace Endofunk.FX {
 
 
   #region Tagged 5
+  [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4, T5> where E : Enum {
-    public readonly E Tag;
-    private readonly int Index;
+    [DataMember] public readonly E Tag;
+    [DataMember] private readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
-    private readonly T5 UnionValue5;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
+    [DataMember] private readonly T5 UnionValue5;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5);
     public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
@@ -417,7 +423,7 @@ namespace Endofunk.FX {
     public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
     public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
     public T5 Value5 => !HasValue5 ? throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue5;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}, {typeof(T5).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}, {Value5}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}, {Value5.ToString()}]";
   }
   #endregion
 
@@ -507,21 +513,22 @@ namespace Endofunk.FX {
 
 
   #region Tagged 6
+  [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4, T5, T6> where E : Enum {
-    public readonly E Tag;
-    private readonly int Index;
+    [DataMember] public readonly E Tag;
+    [DataMember] private readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
     public bool HasValue6 => Index == 6;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
-    private readonly T5 UnionValue5;
-    private readonly T6 UnionValue6;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
+    [DataMember] private readonly T5 UnionValue5;
+    [DataMember] private readonly T6 UnionValue6;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5, T6 unionvalue6) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5, UnionValue6) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5, unionvalue6);
     public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
@@ -530,7 +537,7 @@ namespace Endofunk.FX {
     public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
     public T5 Value5 => !HasValue5 ? throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue5;
     public T6 Value6 => !HasValue6 ? throw new InvalidOperationException($"Can't return {typeof(T6).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue6;
-    public override string ToString() => $"Tagged<{typeof(E).Simplify()}, {typeof(T1).Simplify()}, {typeof(T2).Simplify()}, {typeof(T3).Simplify()}, {typeof(T4).Simplify()}, {typeof(T5).Simplify()}, {typeof(T6).Simplify()}>[{Value1}, {Value2}, {Value3}, {Value4}, {Value5}, {Value6}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}, {Value5.ToString()}, {Value6.ToString()}]";
   }
   #endregion
 

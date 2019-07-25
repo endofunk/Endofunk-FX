@@ -26,8 +26,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using static System.Console;
+using System.Runtime.Serialization.Json;
+using System.Text;
 
 namespace Endofunk.FX {
   public enum Unit { } // functional void
@@ -37,6 +40,74 @@ namespace Endofunk.FX {
     #region Stream
     public static string ReadToEndOfStream(this Stream stream) => new StreamReader(stream).ReadToEnd();
     #endregion
+
+    #region Repeat, Replicate, Cycle, SplitAt, Span, Break
+    /// <summary>
+    /// Repeat x is an infinite list, with x the value of every element.
+    /// </summary>
+    public static IEnumerable<A> Repeat<A>(this A a) {
+      while (true) yield return a;
+    }
+
+    /// <summary>
+    /// Replicate n x is a list of length n with x the value of every element. It is an instance
+    /// of the more general genericReplicate, in which n may be of any integral type.
+    /// </summary>
+    public static Func<int, IEnumerable<A>> Replicate<A>(this A a) => n => a.Repeat().Take(n);
+
+    /// <summary>
+    /// Cycle ties a finite list into a circular one, or equivalently, the infinite repetition
+    /// of the original list. It is the identity on infinite lists.
+    /// </summary>
+    public static IEnumerable<A> Cycle<A>(params A[] xs) {
+      while (true) {
+        foreach (var x in xs) yield return x;
+      }
+    }
+
+    /// <summary>
+    /// SplitAt n xs returns a tuple where first element is xs prefix of length n and second
+    /// element is the remainder of the list:
+    /// </summary>
+    public static (IEnumerable<A>, IEnumerable<A>) SplitAt<A>(this IEnumerable<A> xs, int n) => (xs.Take(n), xs.Skip(n));
+
+    /// <summary>
+    /// Span, applied to a predicate p and a list xs, returns a tuple where first element is
+    /// longest prefix (possibly empty) of xs of elements that satisfy p and second element
+    /// is the remainder of the list.
+    /// </summary>
+    public static (IEnumerable<A>, IEnumerable<A>) Span<A>(this IEnumerable<A> xs, Func<A, bool> p) => (xs.TakeWhile(p), xs.SkipWhile(p));
+
+    /// <summary>
+    /// Break, applied to a predicate p and a list xs, returns a tuple where first element is 
+    /// longest prefix (possibly empty) of xs of elements that do not satisfy p and second 
+    /// element is the remainder of the list.
+    /// </summary>
+    public static (IEnumerable<A>, IEnumerable<A>) Break<A>(this IEnumerable<A> xs, Func<A, bool> p) => xs.Span(x => Not(p(x)));
+
+    /// <summary>
+    /// Lines breaks a string up into a list of strings at newline characters. 
+    /// The resulting strings do not contain newlines.
+    /// </summary>
+    public static IEnumerable<string> Lines(this string @this) => @this.Split("\n");
+
+    /// <summary>
+    /// Words breaks a string up into a list of words, which were delimited by white space.
+    /// </summary>
+    public static IEnumerable<string> Words(this string @this) => @this.Split();
+
+    /// <summary>
+    /// Lines breaks a string up into a list of strings at newline characters. 
+    /// The resulting strings do not contain newlines.
+    /// </summary>
+    public static string UnLines(this IEnumerable<string> @this) => @this.Join("\n");
+
+    /// <summary>
+    /// Words breaks a string up into a list of words, which were delimited by white space.
+    /// </summary>
+    public static string UnWords(this IEnumerable<string> @this) => @this.Join(" ");
+    #endregion 
+
 
     public static bool IsMultipleOf(this int n, int m) => n % m == 0;
     public static Predicate<int> IsMultipleOf(this int n) => m => n % m == 0;
@@ -63,10 +134,12 @@ namespace Endofunk.FX {
 
     #region Basic Combinators
     public static A Id<A>(A a) => a;
-    public static Func<A, B, A> Const<A, B>() => (a,  b) => a;
+    public static Func<A, B, A> Const<A, B>() => (a, b) => a;
     public static Func<B, A> Const<A, B>(A a) => b => a;
     public static Func<A, A> Id<A>() => a => a;
     public static Func<A, Maybe<A>> Id2<A>() => a => a;
+    public static Func<A, B, B> Seq<A, B>() => (a, b) => b;
+    public static Func<B, B> Seq<A, B>(A a) => b => b;
     #endregion
 
     #region String Methods
@@ -84,24 +157,14 @@ namespace Endofunk.FX {
     #endregion
 
     #region Type Methods
-    public static string Simplify(this Type type) {
-      var result = type.ToString();
-      var substitutions = new Dictionary<string, string> {
-          {"System.", ""},
-          {",", ", "},
-          {"[", "<"},
-          {"]", ">"},
-          {"Int32", "int"},
-          {"String", "string"},
-          {"Double", "double"},
-          {"Float", "float"}
-      };
+    private static string SimplifyTypeSyntax(this string @this) {
+      var substitutions = new Dictionary<string, string> { { ",", ", " }, { "[", "<" }, { "]", ">" } };
       var regex = new Regex(substitutions.Keys.Select(k => Regex.Escape(k)).Join("|"));
-      result = regex.Replace(result, m => substitutions[m.Value]);
-      result = Regex.Replace(result, @"Func`\d", "Func");
-      result = Regex.IsMatch(result, @"ValueTuple`\d<") ? Regex.Replace(result, @"ValueTuple`\d<", "(").Replace(">", ")") : result;
-      return result;
+      return regex.Replace(Regex.Replace(@this, @"`\d", ""), m => substitutions[m.Value]);
     }
+
+    public static string Simplify(this Type type) => type.ToString().SimplifyTypeSyntax();
+    public static string Simplify(this MethodInfo methodInfo) => methodInfo.ToString().SimplifyTypeSyntax();
     #endregion
 
     #region Measure Execution Time in milliseconds
@@ -183,5 +246,15 @@ namespace Endofunk.FX {
     }
     #endregion
 
+    #region Serialise to JSON
+    public static string ToJsonString<A>(this A obj) {
+      var stream = new MemoryStream();
+      var serializer = new DataContractJsonSerializer(typeof(A));
+      serializer.WriteObject(stream, obj);
+      byte[] json = stream.ToArray();
+      stream.Close();
+      return Encoding.UTF8.GetString(json, 0, json.Length);
+    }
+    #endregion
   }
 }

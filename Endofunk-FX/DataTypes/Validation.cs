@@ -25,21 +25,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
   #region Validation Datatype
+  [DataContract]
   public struct Validation<L, R> : IEquatable<Validation<L, R>> {
-    internal readonly List<L> LValue;
-    internal readonly R RValue;
-    private enum Status { Fail, Success }
-    private readonly Status State;
-    public bool IsSuccess => State == Status.Success;
-    public bool IsFail => State == Status.Fail;
-    private Validation(List<L> fail, R success, Status state) => (State, LValue, RValue) = (state, state == Status.Fail ? fail : default, RValue = state == Status.Success ? success : default);
+    [DataMember] internal readonly List<L> LValue;
+    [DataMember] internal readonly R RValue;
+    [DataMember] public readonly bool IsSuccess;
+    public bool IsFail => !IsSuccess;
+    private Validation(List<L> fail, R success, bool isSuccess) => (IsSuccess, LValue, RValue) = (isSuccess, !isSuccess ? fail : default, isSuccess ? success : default);
     public static implicit operator Validation<L, R>(R value) => value == null ? Prelude.Fail<L, R>(new List<L> { }) : Prelude.Success<L, R>(value);
-    public static Validation<L, R> Success(R success) => new Validation<L, R>(default, success, Status.Success);
-    public static Validation<L, R> Fail(List<L> fail) => new Validation<L, R>(fail, default, Status.Fail);
+    public static Validation<L, R> Success(R success) => new Validation<L, R>(default, success,true );
+    public static Validation<L, R> Fail(List<L> fail) => new Validation<L, R>(fail, default, false);
 
     public bool Equals(Validation<L, R> other) {
       if (IsSuccess && other.IsSuccess && RValue.Equals(other.RValue)) return true;
@@ -59,12 +59,12 @@ namespace Endofunk.FX {
 
     public static bool operator ==(Validation<L, R> @this, Validation<L, R> other) => @this.Equals(other);
     public static bool operator !=(Validation<L, R> @this, Validation<L, R> other) => !(@this == other);
-    public override int GetHashCode() => (LValue, RValue, State).GetHashCode();
+    public override int GetHashCode() => (LValue, RValue, IsSuccess).GetHashCode();
 
     public IEnumerable<R> AsEnumerable() {
       if (IsSuccess) yield return RValue;
     }
-    public override string ToString() => $"Validation<{typeof(L).Simplify()}, {typeof(R).Simplify()}>[{State}: {this.Fold(s => s.ToString(), r => r.ToString())}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{IsSuccess}: {this.Fold(s => s.ToString(), r => r.ToString())}]";
   }
   #endregion
 

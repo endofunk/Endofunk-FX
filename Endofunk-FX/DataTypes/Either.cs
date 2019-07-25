@@ -25,22 +25,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
   #region Either Datatype
+  [DataContract]
   public struct Either<L, R> : IEquatable<Either<L, R>> {
-    internal readonly L LValue;
-    internal readonly R RValue;
-    private enum Status { Left, Right }
-    private readonly Status State;
-    public bool IsRight => State == Status.Right;
-    public bool IsLeft => State == Status.Left;
-    private Either(L left, R right, Status state) => (State, LValue, RValue) = (state, left, right);
+    [DataMember] internal readonly L LValue;
+    [DataMember] internal readonly R RValue;
+    [DataMember] public readonly bool IsRight;
+    public bool IsLeft => !IsRight;
+    private Either(L left, R right, bool state) => (IsRight, LValue, RValue) = (state, left, right);
     public static implicit operator Either<L, R>(R value) => value == null ? Prelude.Left<L, R>(default) : Prelude.Right<L, R>(value);
-    internal static Either<L, R> Right(R right) => new Either<L, R>(default, right, Status.Right);
-    internal static Either<L, R> Left(L left) => new Either<L, R>(left, default, Status.Left);
-    public A Eval<A>(Func<L, A> f, Func<R, A> g) => (IsLeft) ? f(LValue) : g(RValue); 
+    internal static Either<L, R> Right(R right) => new Either<L, R>(default, right, true);
+    internal static Either<L, R> Left(L left) => new Either<L, R>(left, default, false);
+    public A Eval<A>(Func<L, A> f, Func<R, A> g) => IsLeft ? f(LValue) : g(RValue); 
 
     public bool Equals(Either<L, R> other) {
       if (IsRight && other.IsRight && RValue.Equals(other.RValue)) return true;
@@ -60,12 +60,12 @@ namespace Endofunk.FX {
 
     public static bool operator ==(Either<L, R> @this, Either<L, R> other) => @this.Equals(other);
     public static bool operator !=(Either<L, R> @this, Either<L, R> other) => !(@this == other);
-    public override int GetHashCode() => (LValue, RValue, State).GetHashCode();
+    public override int GetHashCode() => (LValue, RValue, IsRight).GetHashCode();
 
     public IEnumerable<R> AsEnumerable() {
       if (IsRight) yield return RValue;
     }
-    public override string ToString() => $"Either<{typeof(L).Simplify()}, {typeof(R).Simplify()}>[{State}: {this.Fold(s => s.ToString(), r => r.ToString())}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{IsRight}: {this.Fold(s => s.ToString(), r => r.ToString())}]";
   } 
   #endregion
 
@@ -89,6 +89,7 @@ namespace Endofunk.FX {
     #region Functor - Map (Right Affinity)
     public static Either<L, R2> Map<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.MapR(fn);
     public static Either<L, R2> Map<L, R, R2>(this Func<R, R2> @this, Either<L, R> e) => e.MapR(@this);
+    public static Func<Either<L, R>, Either<L, R2>> Map<L, R, R2>(this Func<R, R2> @this) => e => e.MapR(@this);
     #endregion
 
     #region Functor - Bimap, First, Second

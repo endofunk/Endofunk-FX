@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
@@ -40,15 +41,18 @@ namespace Endofunk.FX {
   /// The Maybe type is also a monad. It is a simple kind of error monad, where all errors are 
   /// represented by Nothing. A richer error monad can be built using the Either, Result or Validation types.
   /// </summary>
+  [DataContract]
   public struct Maybe<A> : IEquatable<Maybe<A>> {
+    [DataMember]
     internal readonly A Value;
+    [DataMember]
     public readonly bool IsJust;
     public bool IsNothing => !IsJust;
     private Maybe(A value, bool isJust = true) => (IsJust, Value) = (isJust == false || value == null) ? (false, default) : (true, value);
     public static implicit operator Maybe<A>(A value) => value == null ? Nothing<A>() : Just(value);
     public static Maybe<A> Just(A value) => new Maybe<A>(value);
     public static Maybe<A> Nothing() => new Maybe<A>(default, false);
-    public override string ToString() => $"Maybe<{typeof(A).Simplify()}>[{(IsJust ? "Just" : "Nothing")}{(IsNothing ? "" : ": " + this.Fold(s => s.ToString(), () => ""))}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{(IsJust ? "Just" : "Nothing")}{(IsNothing ? "" : ": " + this.Fold(s => s.ToString(), () => ""))}]";
 
     /// <summary>
     /// Determines whether the specified <see cref="Endofunk.FX.Maybe`1"/> is equal to the current <see cref="T:Endofunk.FX.Maybe`1"/>.

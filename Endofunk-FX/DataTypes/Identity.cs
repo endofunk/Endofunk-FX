@@ -23,18 +23,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using static Endofunk.FX.Prelude;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
-
   #region Identity Datatype
+  [DataContract]
   public class Identity<A> : IEquatable<Identity<A>> {
-    internal readonly A Value;
+    [DataMember] internal readonly A Value;
     private Identity(A value) => (Value) = (value);
     public static implicit operator Identity<A>(A value) => Of(value);
     public static Identity<A> Of(A value) => new Identity<A>(value);
-    public override string ToString() => $"Identity<{typeof(A).Simplify()}>[{Value}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{Value.ToString()}]";
     public bool Equals(Identity<A> other) => Value.Equals(other.Value);
 
     public override bool Equals(object obj) {
@@ -65,6 +65,7 @@ namespace Endofunk.FX {
     #region Functor
     public static Identity<R> Map<A, R>(this Func<A, R> fn, Identity<A> @this) => @this.Map(fn);
     public static Identity<R> Map<A, R>(this Identity<A> @this, Func<A, R> fn) => fn(@this.Value);
+    public static Func<Identity<A>, Identity<R>> Map<A, R>(this Func<A, R> fn) => xas => xas.Map(fn);
     #endregion
 
     #region Monad
