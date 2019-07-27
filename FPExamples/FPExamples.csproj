@@ -14,7 +14,7 @@
     <DebugType></DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Endofunk.FX.Net" Version="0.2.2" />
+    <PackageReference Include="Endofunk.FX.Net" Version="0.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Endofunk-FX\Endofunk.FX.csproj" />

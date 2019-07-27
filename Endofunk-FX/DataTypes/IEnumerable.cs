@@ -132,7 +132,7 @@ namespace Endofunk.FX {
     #region Traverse
     public static Maybe<IEnumerable<B>> TraverseM<A, B>(this IEnumerable<A> @this, Func<A, Maybe<B>> f) => @this.Fold(Just(Enumerable.Empty<B>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static Identity<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
-    public static Result<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Result<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Value(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static IO<IEnumerable<R>> TraverseM<A, R>(this IEnumerable<A> @this, Func<A, IO<R>> f) => @this.Fold(Enumerable.Empty<R>().ToIO(), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static Reader<S, IEnumerable<R>> TraverseM<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(Enumerable.Empty<R>().ToReader<S, IEnumerable<R>>(), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static Either<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
@@ -140,7 +140,7 @@ namespace Endofunk.FX {
 
     public static Maybe<IEnumerable<B>> TraverseA<A, B>(this IEnumerable<A> @this, Func<A, Maybe<B>> f) => @this.Fold(Just(Enumerable.Empty<B>()), (a, e) => Just(Append<B>().Curry()).Apply(a).Apply(f(e)));
     public static Identity<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => Of(Append<R>().Curry()).Apply(a).Apply(f(e)));
-    public static Result<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Success(Enumerable.Empty<R>()), (a, e) => Success(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static Result<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Result<R>> f) => @this.Fold(Value(Enumerable.Empty<R>()), (a, e) => Value(Append<R>().Curry()).Apply(a).Apply(f(e)));
     public static IO<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, IO<R>> f) => @this.Fold(Enumerable.Empty<R>().ToIO(), (a, e) => Append<R>().Curry().ToIO().Apply(a).Apply(f(e)));
     public static Reader<S, IEnumerable<R>> TraverseA<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(Enumerable.Empty<R>().ToReader<S, IEnumerable<R>>(), (a, e) => Append<R>().Curry().ToReader<S, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>().Apply(a).Apply(f(e)));
     public static Either<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Right<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));

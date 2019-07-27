@@ -192,7 +192,7 @@ namespace Endofunk.FX {
     #region Traverse
     public static IEnumerable<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(nothing: () => Enumerable.Empty<Maybe<B>>().Append(Nothing<B>()), just: a => f(a).Map(Just));
     public static Identity<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Identity<B>> f) => @this.Fold(nothing: () => Identity<Maybe<B>>.Of(Nothing<B>()), just: a => f(a).Map(Just));
-    public static Result<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Result<B>> f) => @this.Fold(nothing: () => Success(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Result<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Result<B>> f) => @this.Fold(nothing: () => Value(Nothing<B>()), just: a => f(a).Map(Just));
     public static IO<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, IO<B>> f) => @this.Fold(nothing: () => Nothing<B>().ToIO<Maybe<B>>(), just: a => f(a).Map(Just));
     public static Reader<R, Maybe<B>> Traverse<R, A, B>(this Maybe<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(nothing: () => Reader<R, Maybe<B>>.Pure(Nothing<B>()), just: a => f(a).Map(Just));
     public static Either<L, Maybe<B>> Traverse<L, A, B>(this Maybe<A> @this, Func<A, Either<L, B>> f) => @this.Fold(nothing: () => Right<L, Maybe<B>>(Nothing<B>()), just: a => f(a).Map(Just));

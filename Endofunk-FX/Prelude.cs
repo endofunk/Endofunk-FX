@@ -37,6 +37,12 @@ namespace Endofunk.FX {
 
   public static partial class Prelude {
 
+    /// <summary>
+    /// Left-to-right composition of unary `lhs` on unary `rhs`.
+    /// This is the function such that `lhs.Compose(rhs)(a)` = `rhs(lhs(a))`.
+    /// </summary>
+    public static Func<Func<B, C>, Func<A, B>, Func<A, C>> Compose<A, B, C>() => (lhs, rhs) => rhs.Compose(lhs);
+
     #region Stream
     public static string ReadToEndOfStream(this Stream stream) => new StreamReader(stream).ReadToEnd();
     #endregion

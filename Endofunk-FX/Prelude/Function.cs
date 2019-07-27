@@ -75,11 +75,6 @@ namespace Endofunk.FX {
     public static Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, H>>>>>>> Fun<A, B, C, D, E, F, G, H>(Func<A, Func<B, Func<C, Func<D, Func<E, Func<F, Func<G, H>>>>>>> fn) => fn;
     #endregion
 
-    /// <summary>
-    /// Left-to-right composition of unary `f` on unary `g`.
-    /// </summary>
-    public static Func<T, T> Compose<T>(Func<T, T> f, Func<T, T> g) => t => g(f(t));
-
     #region Fix
     public static Func<T, U> Fix<T, U>(Func<Func<T, U>, Func<T, U>> f) => t => f(Fix(f))(t);
     #endregion
@@ -145,22 +140,10 @@ namespace Endofunk.FX {
     public static Func<A, C> Compose<A, B, C>(this Func<A, B> lhs, Func<B, C> rhs) => a => rhs(lhs(a));
 
     /// <summary>
-    /// Right-to-left composition of unary `rhs` on unary `lhs`.
-    /// This is the function such that `rhs.Compose(lhs)(a)` = `lhs(rhs(a))`.
-    /// </summary>
-    public static Func<A, C> Compose<A, B, C>(this Func<B, C> lhs, Func<A, B> rhs) => a => lhs(rhs(a));
-
-    /// <summary>
     /// Right-to-left composition of binary `lhs` on unary `rhs`.
     /// This is the function such that `(lhs.Compose(rhs))(a, b)` = `rhs(lhs(a, b))`.
     /// </summary>
     public static Func<A, B, D> Compose<A, B, C, D>(this Func<A, B, C> lhs, Func<C, D> rhs) => (a, b) => rhs(lhs(a, b));
-
-    /// <summary>
-    /// Left-to-right composition of binary `rhs` on unary `lhs`.
-    /// This is the function such that `(rhs.Compose(lhs))(a, b)` = `lhs(rhs(a, b))`.
-    /// </summary>
-    public static Func<A, B, D> Compose<A, B, C, D>(this Func<C, D> lhs, Func<A, B, C> rhs) => (a, b) => lhs(rhs(a, b));
     #endregion
 
     #region Flipped
@@ -194,6 +177,4 @@ namespace Endofunk.FX {
     public static R Pipe<A, B, C, D, E, F, G, H, I, J, K, L, M, R>(this A a, Func<A, B> f1, Func<B, C> f2, Func<C, D> f3, Func<D, E> f4, Func<E, F> f5, Func<F, G> f6, Func<G, H> f7, Func<H, I> f8, Func<I, J> f9, Func<J, K> f10, Func<K, L> f11, Func<L, M> f12, Func<M, R> f13) => f13(f12(f11(f10(f9(f8(f7(f6(f5(f4(f3(f2(f1(a)))))))))))));
     #endregion
   }
-
-
 }

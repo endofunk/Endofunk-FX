@@ -31,33 +31,39 @@ using System.Runtime.Serialization;
 namespace Endofunk.FX {
 
   #region Result Datatype
-  [DataContract]
-  public struct Result<A> {
-    [DataMember] internal readonly A Value;
-    [DataMember] internal readonly ExceptionDispatchInfo Failure;
-    [DataMember] public readonly bool IsSuccess;
-    public bool IsFailure => !IsSuccess;
-    private Result(A value) => (IsSuccess, Failure, Value) = (true, default, value);
-    private Result(ExceptionDispatchInfo failure) => (IsSuccess, Failure, Value) = (false, failure, default);
+  /// <summary>
+  /// A monad that represents success and failure conditions.
+  /// In a series of bind operations, if any function returns an error monad, the preceding
+  /// flatmap / binds are skipped. 
+  /// 
+  /// This allows for easy flow control for both success and error cases.
+  /// </summary>
+  [DataContract] public struct Result<A> : IEquatable<Result<A>> {
+    [DataMember] internal readonly A SuccessValue;
+    [DataMember] internal readonly ExceptionDispatchInfo ErrorValue;
+    [DataMember] public readonly bool HasValue;
+    public bool HasError => !HasValue;
+    private Result(A value) => (HasValue, ErrorValue, SuccessValue) = (true, default, value);
+    private Result(ExceptionDispatchInfo error) => (HasValue, ErrorValue, SuccessValue) = (false, error, default);
     private Result(Func<A> closure) {
       try {
-        (IsSuccess, Failure, Value) = (true, default, closure());
+        (HasValue, ErrorValue, SuccessValue) = (true, default, closure());
       } catch (Exception e) {
-        (IsSuccess, Failure, Value) = (false, ExceptionDispatchInfo.Capture(e), default);
+        (HasValue, ErrorValue, SuccessValue) = (false, ExceptionDispatchInfo.Capture(e), default);
       }
     }
 
-    public static implicit operator Result<A>(A value) => value == null ? Failed(default) : Success(value);
-    public static implicit operator Result<A>(ExceptionDispatchInfo value) => Failed(value);
-    public static Result<A> Success(A value) => new Result<A>(value);
-    public static Result<A> Failed(ExceptionDispatchInfo e) => new Result<A>(e);
+    public static implicit operator Result<A>(A value) => value == null ? Error(default) : Value(value);
+    public static implicit operator Result<A>(ExceptionDispatchInfo error) => Error(error);
+    public static Result<A> Value(A value) => new Result<A>(value);
+    public static Result<A> Error(ExceptionDispatchInfo error) => new Result<A>(error);
     public static Result<A> Try(Func<A> f) => new Result<A>(f);
-    public override string ToString() => $"{this.GetType().Simplify()}[{IsSuccess}: {(IsFailure ? Failure.SourceException.Message : this.Fold(s => s.ToString()))}]";
+    public override string ToString() => $"{this.GetType().Simplify()}[{HasValue}: {(HasError ? ErrorValue.SourceException.Message : this.Fold(s => s.ToString()))}]";
 
     public bool Equals(Result<A> other) {
-      switch ((IsSuccess, other.IsSuccess)) {
+      switch ((HasValue, other.HasValue)) {
         case var t when t.And(true, true):
-          return Value.Equals(other.Value);
+          return SuccessValue.Equals(other.SuccessValue);
         case var t when t.And(false, false):
           return true;
         default:
@@ -77,27 +83,27 @@ namespace Endofunk.FX {
 
     public static bool operator ==(Result<A> @this, Result<A> other) => @this.Equals(other);
     public static bool operator !=(Result<A> @this, Result<A> other) => !(@this == other);
-    public override int GetHashCode() => (Value, Failure).GetHashCode();
+    public override int GetHashCode() => (SuccessValue, ErrorValue).GetHashCode();
 
     public IEnumerable<A> AsEnumerable() {
-      if (IsSuccess) yield return Value;
+      if (HasValue) yield return SuccessValue;
     }
   }
   #endregion
 
   public static partial class ResultExtensions {
     #region Fold
-    public static R Fold<A, R>(this Result<A> @this, Func<A, R> fn) => @this.IsSuccess ? fn(@this.Value) : default;
-    public static R Fold<A, R>(this Result<A> @this, Func<A, R> success, Func<ExceptionDispatchInfo, R> failed) => @this.IsSuccess ? success(@this.Value) : failed(@this.Failure);
+    public static R Fold<A, R>(this Result<A> @this, Func<A, R> fn) => @this.HasValue ? fn(@this.SuccessValue) : default;
+    public static R Fold<A, R>(this Result<A> @this, Func<A, R> success, Func<ExceptionDispatchInfo, R> failed) => @this.HasValue ? success(@this.SuccessValue) : failed(@this.ErrorValue);
     #endregion
 
     #region Functor
     public static Result<R> Map<A, R>(this Func<A, R> fn, Result<A> @this) => @this.Map(fn);
-    public static Result<R> Map<A, R>(this Result<A> @this, Func<A, R> fn) => @this.IsSuccess ? Success(fn(@this.Value)) : Failed<R>(@this.Failure);
+    public static Result<R> Map<A, R>(this Result<A> @this, Func<A, R> fn) => @this.HasValue ? Value(fn(@this.SuccessValue)) : Error<R>(@this.ErrorValue);
     #endregion
 
     #region Monad
-    public static Result<R> FlatMap<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.IsSuccess ? fn(@this.Value) : Failed<R>(@this.Failure);
+    public static Result<R> FlatMap<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.HasValue ? fn(@this.SuccessValue) : Error<R>(@this.ErrorValue);
     public static Result<R> FlatMap<A, R>(this Func<A, Result<R>> fn, Result<A> @this) => @this.FlatMap(fn);
     public static Func<Result<A>, Result<B>> FlatMap<A, B>(this Func<A, Result<B>> f) => a => a.FlatMap(f);
     public static Result<R> Bind<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.FlatMap(fn);
@@ -108,16 +114,16 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
-    public static Result<R> LiftM<A, R>(this Func<A, R> @this, Result<A> a) => a.FlatMap(xa => Success(@this(xa)));
-    public static Result<R> LiftM<A, B, R>(this Func<A, B, R> @this, Result<A> a, Result<B> b) => a.FlatMap(xa => b.FlatMap(xb => Success(@this(xa, xb))));
-    public static Result<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Result<A> a, Result<B> b, Result<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Success(@this(xa, xb, xc)))));
-    public static Result<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Success(@this(xa, xb, xc, xd))))));
-    public static Result<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => Success(@this(xa, xb, xc, xd, xe)))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => Success(@this(xa, xb, xc, xd, xe, xf))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => Success(@this(xa, xb, xc, xd, xe, xf, xg)))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => Success(@this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => Success(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i, Result<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => Success(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
+    public static Result<R> LiftM<A, R>(this Func<A, R> @this, Result<A> a) => a.FlatMap(xa => Value(@this(xa)));
+    public static Result<R> LiftM<A, B, R>(this Func<A, B, R> @this, Result<A> a, Result<B> b) => a.FlatMap(xa => b.FlatMap(xb => Value(@this(xa, xb))));
+    public static Result<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Result<A> a, Result<B> b, Result<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Value(@this(xa, xb, xc)))));
+    public static Result<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Value(@this(xa, xb, xc, xd))))));
+    public static Result<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => Value(@this(xa, xb, xc, xd, xe)))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => Value(@this(xa, xb, xc, xd, xe, xf))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => Value(@this(xa, xb, xc, xd, xe, xf, xg)))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i, Result<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
     #endregion
 
     #region Applicative Functor
@@ -152,13 +158,13 @@ namespace Endofunk.FX {
     #endregion
 
     #region Traverse
-    public static IEnumerable<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(failed: e => Enumerable.Empty<Result<B>>().Append(Failed<B>(e)), success: a => f(a).Map(Success));
-    public static Identity<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Identity<B>> f) => @this.Fold(failed: e => Identity<Result<B>>.Of(Failed<B>(e)), success: a => f(a).Map(Success));
-    public static Maybe<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Maybe<B>> f) => @this.Fold(failed: e => Just(Failed<B>(e)), success: a => f(a).Map(Success));
-    public static IO<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IO<B>> f) => @this.Fold(failed: e => Failed<B>(e).ToIO<Result<B>>(), success: a => f(a).Map(Success));
-    public static Reader<R, Result<B>> Traverse<R, A, B>(this Result<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(failed: e => Reader<R, Result<B>>.Pure(Failed<B>(e)), success: a => f(a).Map(Success));
-    public static Either<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Either<L, B>> f) => @this.Fold(failed: e => Right<L, Result<B>>(Failed<B>(e)), success: a => f(a).Map(Success));
-    public static Validation<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(failed: e => Success<L, Result<B>>(Failed<B>(e)), success: a => f(a).Map(Success));
+    public static IEnumerable<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(failed: e => Enumerable.Empty<Result<B>>().Append(Error<B>(e)), success: a => f(a).Map(Value));
+    public static Identity<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Identity<B>> f) => @this.Fold(failed: e => Identity<Result<B>>.Of(Error<B>(e)), success: a => f(a).Map(Value));
+    public static Maybe<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Maybe<B>> f) => @this.Fold(failed: e => Just(Error<B>(e)), success: a => f(a).Map(Value));
+    public static IO<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, IO<B>> f) => @this.Fold(failed: e => Error<B>(e).ToIO<Result<B>>(), success: a => f(a).Map(Value));
+    public static Reader<R, Result<B>> Traverse<R, A, B>(this Result<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(failed: e => Reader<R, Result<B>>.Pure(Error<B>(e)), success: a => f(a).Map(Value));
+    public static Either<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Either<L, B>> f) => @this.Fold(failed: e => Right<L, Result<B>>(Error<B>(e)), success: a => f(a).Map(Value));
+    public static Validation<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(failed: e => Success<L, Result<B>>(Error<B>(e)), success: a => f(a).Map(Value));
     #endregion
 
     #region Sequence
@@ -173,17 +179,17 @@ namespace Endofunk.FX {
 
     #region Match
     public static void Match<A>(this Result<A> @this, Action<ExceptionDispatchInfo> failed, Action<A> success) {
-      switch (@this.IsSuccess) {
+      switch (@this.HasValue) {
         case true:
-          success(@this.Value);
+          success(@this.SuccessValue);
           return;
         default:
-          failed(@this.Failure);
+          failed(@this.ErrorValue);
           return;
       }
     }
 
-    public static R Match<A, R>(this Result<A> @this, Func<ExceptionDispatchInfo, R> failed, Func<A, R> success) => @this.IsSuccess ? success(@this.Value) : failed(@this.Failure);
+    public static R Match<A, R>(this Result<A> @this, Func<ExceptionDispatchInfo, R> failed, Func<A, R> success) => @this.HasValue ? success(@this.SuccessValue) : failed(@this.ErrorValue);
     #endregion
 
     #region DebugPrint
@@ -197,22 +203,22 @@ namespace Endofunk.FX {
     #endregion
 
     #region GetOrElse
-    public static A GetOrElse<A>(this Result<A> @this, A other) => @this.IsSuccess ? @this.Value : other;
+    public static A GetOrElse<A>(this Result<A> @this, A other) => @this.HasValue ? @this.SuccessValue : other;
     #endregion
 
     #region ToResult
-    public static Result<A> ToResult<A>(this A a) => Success(a);
-    public static Result<A> ToResult<A>(this ExceptionDispatchInfo e) => Failed<A>(e);
-    public static Func<A, Result<B>> ToResult<A, B>(this Func<A, B> f) => a => Success<B>(f(a));
+    public static Result<A> ToResult<A>(this A a) => Value(a);
+    public static Result<A> ToResult<A>(this ExceptionDispatchInfo e) => Error<A>(e);
+    public static Func<A, Result<B>> ToResult<A, B>(this Func<A, B> f) => a => Value<B>(f(a));
     #endregion
   }
 
   public static partial class Prelude {
-    #region Syntactic Sugar - Success / Failure 
-    public static Result<A> Success<A>(A value) => Result<A>.Success(value);
-    public static Func<A, Result<A>> Success<A>() => a => Success<A>(a);
-    public static Result<A> Failed<A>(ExceptionDispatchInfo error) => Result<A>.Failed(error);
-    public static Func<ExceptionDispatchInfo, Result<A>> Failed<A>() => e => Failed<A>(e);
+    #region Syntactic Sugar - Value / Error 
+    public static Result<A> Value<A>(A value) => Result<A>.Value(value);
+    public static Func<A, Result<A>> Value<A>() => a => Value<A>(a);
+    public static Result<A> Error<A>(ExceptionDispatchInfo error) => Result<A>.Error(error);
+    public static Func<ExceptionDispatchInfo, Result<A>> Error<A>() => e => Error<A>(e);
     public static Result<A> Try<A>(Func<A> f) => Result<A>.Try(f);
     public static Func<Func<A>, Result<A>> Try<A>() => f => Try<A>(f);
     #endregion

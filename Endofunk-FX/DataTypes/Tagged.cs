@@ -28,8 +28,7 @@ using System.Runtime.Serialization;
 namespace Endofunk.FX {
 
   #region Tagged 1
-  [DataContract]
-  public sealed class Tagged<E, T1> where E : Enum {
+  [DataContract] public sealed class Tagged<E, T1> where E : Enum {
     [DataMember] public readonly E Tag;
     [DataMember] public readonly bool HasValue;
     [DataMember] private readonly T1 UnionValue;

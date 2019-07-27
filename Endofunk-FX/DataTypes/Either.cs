@@ -38,8 +38,8 @@ namespace Endofunk.FX {
     public bool IsLeft => !IsRight;
     private Either(L left, R right, bool state) => (IsRight, LValue, RValue) = (state, left, right);
     public static implicit operator Either<L, R>(R value) => value == null ? Prelude.Left<L, R>(default) : Prelude.Right<L, R>(value);
-    internal static Either<L, R> Right(R right) => new Either<L, R>(default, right, true);
-    internal static Either<L, R> Left(L left) => new Either<L, R>(left, default, false);
+    public static Either<L, R> Right(R right) => new Either<L, R>(default, right, true);
+    public static Either<L, R> Left(L left) => new Either<L, R>(left, default, false);
     public A Eval<A>(Func<L, A> f, Func<R, A> g) => IsLeft ? f(LValue) : g(RValue); 
 
     public bool Equals(Either<L, R> other) {
@@ -171,7 +171,7 @@ namespace Endofunk.FX {
     #region Traverse
     public static IEnumerable<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, IEnumerable<B>> f) => @this.Fold(left: l => Enumerable.Empty<Either<L, B>>().Append(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     public static Identity<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Identity<B>> f) => @this.Fold(left: l => Identity<Either<L, B>>.Of(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
-    public static Result<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Result<B>> f) => @this.Fold(left: l => Success(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Result<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Result<B>> f) => @this.Fold(left: l => Value(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     public static IO<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, IO<B>> f) => @this.Fold(left: l => Left<L, B>(l).ToIO(), right: a => f(a).Map(Right<L, B>()));
     public static Reader<R, Either<L, B>> Traverse<L, R, A, B>(this Either<L, A> @this, Func<A, Reader<R, B>> f) => @this.Fold(left: l => Reader<R, Either<L, B>>.Pure(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     public static Maybe<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Maybe<B>> f) => @this.Fold(left: l => Just(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));

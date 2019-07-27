@@ -506,10 +506,10 @@ namespace FPExamples {
 
       var numbs2 = List(
         List(
-          List(Success(1))
+          List(Value(1))
         ),
         List(
-          List(Success(2))
+          List(Value(2))
         )
       );
 
