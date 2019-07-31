@@ -119,6 +119,10 @@ namespace Endofunk.FX {
   #endregion
 
   public static partial class MaybeExtensions {
+    #region ForEach
+    public static void ForEach<A>(this Maybe<A> @this, Action<A> f) => @this.AsEnumerable().ForEach(f);
+    #endregion
+    
     #region Fold
     public static U Fold<T, U>(this Maybe<T> ts, U identity, Func<U, T, U> fn) {
       var accumulator = identity;

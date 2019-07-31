@@ -92,6 +92,10 @@ namespace Endofunk.FX {
   #endregion
 
   public static partial class ResultExtensions {
+    #region ForEach
+    public static void ForEach<A>(this Result<A> @this, Action<A> f) => @this.AsEnumerable().ForEach(f);
+    #endregion
+
     #region Fold
     public static R Fold<A, R>(this Result<A> @this, Func<A, R> fn) => @this.HasValue ? fn(@this.SuccessValue) : default;
     public static R Fold<A, R>(this Result<A> @this, Func<A, R> success, Func<ExceptionDispatchInfo, R> failed) => @this.HasValue ? success(@this.SuccessValue) : failed(@this.ErrorValue);

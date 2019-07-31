@@ -69,6 +69,10 @@ namespace Endofunk.FX {
   #endregion
 
   public static partial class ValidationExtensions {
+    #region ForEach
+    public static void ForEach<L, R>(this Validation<L, R> @this, Action<R> f) => @this.AsEnumerable().ForEach(f);
+    #endregion
+
     #region Fold
     public static R2 Fold<L, R1, R2>(this Validation<L, R1> @this, Func<List<L>, R2> left, Func<R1, R2> right) => @this.IsSuccess ? right(@this.RValue) : left(@this.LValue);
     #endregion

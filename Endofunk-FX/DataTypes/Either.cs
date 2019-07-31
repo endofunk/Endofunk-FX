@@ -70,6 +70,10 @@ namespace Endofunk.FX {
   #endregion
 
   public static partial class EitherExtensions {
+    #region ForEach
+    public static void ForEach<L, R>(this Either<L, R> @this, Action<R> f) => @this.AsEnumerable().ForEach(f);
+    #endregion
+
     #region Either - Fold
     public static R2 FoldR<L, R, R2>(this Either<L, R> @this, R2 identity, Func<R2, R, R2> fn) {
       var accumulator = identity;
