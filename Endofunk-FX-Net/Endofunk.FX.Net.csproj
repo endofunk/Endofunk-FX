@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <PackageVersion>0.3</PackageVersion>
+    <PackageVersion>0.3.1</PackageVersion>
     <Authors>endofunk</Authors>
     <PackageId>Endofunk.FX.Net</PackageId>
     <Description>A companion library to Endofunk.FX providing functional wrappers around:
@@ -14,9 +14,9 @@
     <PackageProjectUrl>https://github.com/endofunk/Endofunk-FX</PackageProjectUrl>
     <Title>System.Web companion library for EndoFunk.FX</Title>
     <Summary>Functional wrapper for System.Web and Newtonsoft.Json</Summary>
-    <PackageReleaseNotes>Update to Endofunk.FX 0.3</PackageReleaseNotes>
+    <PackageReleaseNotes>Update to Endofunk.FX 0.3.1</PackageReleaseNotes>
     <PackageTags>C#, Functional, Functional Programming, JSON</PackageTags>
-    <ReleaseVersion>0.3</ReleaseVersion>
+    <ReleaseVersion>0.3.1</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Endofunk.FX" Version="0.3.0" />
+    <PackageReference Include="Endofunk.FX" Version="0.3.1" />
   </ItemGroup>
 </Project>
