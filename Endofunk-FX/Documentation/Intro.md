@@ -4,7 +4,7 @@ Welcome to the `Endofunk.FX` functional programming language extension for `C#`.
 
 
 
-#Functional Programming
+# Functional Programming
 
 Functional Programming (FP) has for decades been a darling only within computer science circles; prized for its strong ties to mathematical theory and its abstract nature. Yet much of that behind the scenes effort has ultimately led to a greater adoption of FP enabling features in mainstream languages; meaning that for the most part; a FP style of programming can be fairly easily exploited in most mainstream languages. 
 
