@@ -31,7 +31,7 @@ namespace Endofunk.FX {
 
   #region Either Datatype
   [DataContract]
-  public struct Either<L, R> : IEquatable<Either<L, R>> {
+  public sealed class Either<L, R> : IEquatable<Either<L, R>> {
     [DataMember] internal readonly L LValue;
     [DataMember] internal readonly R RValue;
     [DataMember] public readonly bool IsRight;

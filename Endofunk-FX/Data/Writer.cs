@@ -28,7 +28,7 @@ using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
   [DataContract]
-  public struct Writer<W, A> {
+  public sealed class Writer<W, A> {
     [DataMember] internal readonly W _W;
     [DataMember] internal readonly A _A;
     public (W, A) Run => (_W, _A);

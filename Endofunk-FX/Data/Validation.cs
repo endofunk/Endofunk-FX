@@ -31,7 +31,7 @@ namespace Endofunk.FX {
 
   #region Validation Datatype
   [DataContract]
-  public struct Validation<L, R> : IEquatable<Validation<L, R>> {
+  public sealed class Validation<L, R> : IEquatable<Validation<L, R>> {
     [DataMember] internal readonly List<L> LValue;
     [DataMember] internal readonly R RValue;
     [DataMember] public readonly bool IsSuccess;

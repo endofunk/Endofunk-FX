@@ -37,12 +37,6 @@ namespace Endofunk.FX {
 
   public static partial class Prelude {
 
-    /// <summary>
-    /// Left-to-right composition of unary `lhs` on unary `rhs`.
-    /// This is the function such that `lhs.Compose(rhs)(a)` = `rhs(lhs(a))`.
-    /// </summary>
-    public static Func<Func<B, C>, Func<A, B>, Func<A, C>> Compose<A, B, C>() => (lhs, rhs) => rhs.Compose(lhs);
-
     #region Stream
     public static string ReadToEndOfStream(this Stream stream) => new StreamReader(stream).ReadToEnd();
     #endregion
@@ -66,9 +60,7 @@ namespace Endofunk.FX {
     /// of the original list. It is the identity on infinite lists.
     /// </summary>
     public static IEnumerable<A> Cycle<A>(params A[] xs) {
-      while (true) {
-        foreach (var x in xs) yield return x;
-      }
+      while (true) foreach (var x in xs) yield return x;
     }
 
     /// <summary>
@@ -113,40 +105,6 @@ namespace Endofunk.FX {
     /// </summary>
     public static string UnWords(this IEnumerable<string> @this) => @this.Join(" ");
     #endregion 
-
-
-    public static bool IsMultipleOf(this int n, int m) => n % m == 0;
-    public static Predicate<int> IsMultipleOf(this int n) => m => n % m == 0;
-
-    #region Boolean Combinators
-    public static bool Validate<A>(this A @this, Predicate<A> predicate) => predicate(@this);
-    public static A Bool<A>(this A x, A y, bool cond) => cond ? y : x;
-    public static Func<A, Func<A, Func<bool, A>>> Bool<A>() => x => y => cond => cond ? y : x;
-    public static bool Not(this bool a) => !a;
-    public static bool And(this bool a, bool b) => a && b;
-    public static bool Or(this bool a, bool b) => a || b;
-    public static Predicate<A> ToPredicate<A>(this Func<A, bool> f) => new Predicate<A>(f);
-    public static bool ForEither<A>(this Predicate<A> p, params A[] sm) where A : IComparable<A> {
-      foreach (var e in sm) {
-        if (p(e)) return true;
-      }
-      return false;
-    }
-    public static bool ForEither<A>(this Func<A, bool> p, params A[] sm) where A : IComparable<A> => p.ToPredicate().ForEither(sm);
-    public static bool ForAll<A>(this Predicate<A> p, params A[] sm) where A : IComparable<A> => Array.TrueForAll(sm, p);
-    public static bool ForAll<A>(this Func<A, bool> p, params A[] sm) where A : IComparable<A> => Array.TrueForAll(sm, p.ToPredicate());
-    public static Func<A, bool> Equals<A>(this A value) => a => a.Equals(value);
-    #endregion
-
-    #region Basic Combinators
-    public static A Id<A>(A a) => a;
-    public static Func<A, B, A> Const<A, B>() => (a, b) => a;
-    public static Func<B, A> Const<A, B>(A a) => b => a;
-    public static Func<A, A> Id<A>() => a => a;
-    public static Func<A, Maybe<A>> Id2<A>() => a => a;
-    public static Func<A, B, B> Seq<A, B>() => (a, b) => b;
-    public static Func<B, B> Seq<A, B>(A a) => b => b;
-    #endregion
 
     #region String Methods
     public static string DropLast(this string input, int quantity) {
@@ -194,12 +152,6 @@ namespace Endofunk.FX {
 
     #region Exception Handling / Logging
     public static string LogDefault(Exception e) => $"message: {e.Message}\ntrace: {e.StackTrace}\n";
-    #endregion
-
-    #region With / Then / Select
-    public static A With<A>(this A a, Action<A> f) { f(a); return a; }
-    public static B Then<A, B>(this A @this, Func<A, B> f) => @this == null ? default : f(@this);
-    public static void Then<A>(this A @this, Action<A> f) { if (@this != null) f(@this); }
     #endregion
 
     #region File / Directory

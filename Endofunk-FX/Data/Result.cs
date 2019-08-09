@@ -38,18 +38,19 @@ namespace Endofunk.FX {
   /// 
   /// This allows for easy flow control for both success and error cases.
   /// </summary>
-  [DataContract] public struct Result<A> : IEquatable<Result<A>> {
+  [DataContract] public sealed class Result<A> : IEquatable<Result<A>> {
     [DataMember] internal readonly A SuccessValue;
-    [DataMember] internal readonly ExceptionDispatchInfo ErrorValue;
+     internal readonly ExceptionDispatchInfo ErrorValue;
     [DataMember] public readonly bool HasValue;
+    [DataMember] private readonly string ErrorMessage; 
     public bool HasError => !HasValue;
-    private Result(A value) => (HasValue, ErrorValue, SuccessValue) = (true, default, value);
-    private Result(ExceptionDispatchInfo error) => (HasValue, ErrorValue, SuccessValue) = (false, error, default);
+    private Result(A value) => (HasValue, ErrorValue, ErrorMessage, SuccessValue) = (true, default, default, value);
+    private Result(ExceptionDispatchInfo error) => (HasValue, ErrorValue, ErrorMessage, SuccessValue) = (false, error, error.SourceException.Message, default);
     private Result(Func<A> closure) {
       try {
-        (HasValue, ErrorValue, SuccessValue) = (true, default, closure());
+        (HasValue, ErrorValue, ErrorMessage, SuccessValue) = (true, default, default, closure());
       } catch (Exception e) {
-        (HasValue, ErrorValue, SuccessValue) = (false, ExceptionDispatchInfo.Capture(e), default);
+        (HasValue, ErrorValue, ErrorMessage, SuccessValue) = (false, ExceptionDispatchInfo.Capture(e), e.Message, default);
       }
     }
 

@@ -24,7 +24,7 @@
 using System;
 
 namespace Endofunk.FX {
-  public struct State<S, A> {
+  public sealed class State<S, A> {
     public readonly Func<S, (A a, S s)> Run;
     public A Eval(S state) => Run(state).a;
     public S Exec(S state) => Run(state).s;

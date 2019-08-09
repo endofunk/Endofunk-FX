@@ -27,7 +27,7 @@ using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
-  public struct Coyoneda<V, A, B> {
+  public sealed class Coyoneda<V, A, B> {
     public readonly V Value;
     public readonly Func<A, B> Transform;
     public Coyoneda(V value, Func<A, B> transform) => (Value, Transform) = (value, transform);

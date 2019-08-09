@@ -34,23 +34,23 @@ namespace Endofunk.FX {
     [DataMember] private readonly T1 UnionValue;
     private Tagged() { }
     internal Tagged(E tag, bool hasvalue, T1 unionvalue) => (Tag, HasValue, UnionValue) = (tag, hasvalue, unionvalue);
-    public T1 Value => !HasValue ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.") : UnionValue;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value.ToString()}]";
+    public T1 Value => HasValue ? UnionValue : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue ? Value.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 1 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R> Map<E, T1, R>(this Tagged<E, T1> @this, Func<T1, R> f) where E : Enum => Tagged(@this.Tag, f(@this.Value));
-    public static Tagged<E, R> Map<E, T1, R>(this Func<T1, R> f, Tagged<E, T1> @this) where E : Enum => Tagged(@this.Tag, f(@this.Value));
+    public static Tagged<E, R> Map<E, T1, R>(this Tagged<E, T1> @this, Func<T1, R> f) where E : Enum => @this.HasValue ? Tagged(@this.Tag, f(@this.Value)) : new Tagged<E, R>(@this.Tag, @this.HasValue, default);
+    public static Tagged<E, R> Map<E, T1, R>(this Func<T1, R> f, Tagged<E, T1> @this) where E : Enum => @this.HasValue ? Tagged(@this.Tag, f(@this.Value)) : new Tagged<E, R>(@this.Tag, @this.HasValue, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R> FlatMap<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => f((@this.Tag, @this.Value));
-    public static Tagged<E, R> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f, Tagged<E, T1> @this) where E : Enum => f((@this.Tag, @this.Value));
-    public static Tagged<E, R> Bind<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => f((@this.Tag, @this.Value));
-    public static Func<Tagged<E, T1>, Tagged<E, R>> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f) where E : Enum => a => f((a.Tag, a.Value));
+    public static Tagged<E, R> FlatMap<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => @this.HasValue ? f((@this.Tag, @this.Value)) : new Tagged<E, R>(@this.Tag, @this.HasValue, default);
+    public static Tagged<E, R> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f, Tagged<E, T1> @this) where E : Enum => @this.HasValue ? f((@this.Tag, @this.Value)) : new Tagged<E, R>(@this.Tag, @this.HasValue, default);
+    public static Tagged<E, R> Bind<E, T1, R>(this Tagged<E, T1> @this, Func<(E, T1), Tagged<E, R>> f) where E : Enum => @this.FlatMap(f);
+    public static Func<Tagged<E, T1>, Tagged<E, R>> FlatMap<E, T1, R>(this Func<(E, T1), Tagged<E, R>> f) where E : Enum => a => a.FlatMap(f);
     #endregion
 
     #region Applicative Functor
@@ -83,27 +83,6 @@ namespace Endofunk.FX {
     public static Tagged<E, R> LiftA<E, T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> @this, Tagged<E, T1> t1, Tagged<E, T2> t2, Tagged<E, T3> t3, Tagged<E, T4> t4, Tagged<E, T5> t5, Tagged<E, T6> t6, Tagged<E, T7> t7, Tagged<E, T8> t8, Tagged<E, T9> t9) where E : Enum => @this.Curry().Map(t1).Apply(t2).Apply(t3).Apply(t4).Apply(t5).Apply(t6).Apply(t7).Apply(t8).Apply(t9);
     #endregion
 
-    #region Match
-    public static void Match<E, T1>(this Tagged<E, T1> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, R>(this Tagged<E, T1> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
-    #endregion
-
     #region DebugPrint
     public static void DebugPrint<E, T1>(this Tagged<E, T1> @this, string title = "") where E : Enum => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
@@ -129,31 +108,31 @@ namespace Endofunk.FX {
   [DataContract]
   public sealed class Tagged<E, T1, T2> where E : Enum {
     [DataMember] public readonly E Tag;
-    [DataMember] private readonly int Index;
+    [DataMember] internal readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
-    [DataMember] private readonly T1 UnionValue1;
-    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] internal readonly T1 UnionValue1;
+    [DataMember] internal readonly T2 UnionValue2;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2) => (Tag, Index, UnionValue1, UnionValue2) = (tag, index, unionvalue1, unionvalue2);
-    public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
-    public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}]";
+    public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T2 Value2 => HasValue2 ? UnionValue2 : throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue1 ? Value1.ToString() : "")}, {(HasValue2 ? Value2.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 2 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R, T2> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2>(@this.Tag, f(@this.Value1));
-    public static Tagged<E, T1, R> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R>(@this.Tag, f(@this.Value2));
+    public static Tagged<E, R, T2> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T1, R> f) where E : Enum => @this.HasValue1 ? Tagged<E, R, T2>(@this.Tag, f(@this.Value1)) : new Tagged<E, R, T2>(@this.Tag, @this.Index, default, @this.UnionValue2);
+    public static Tagged<E, T1, R> Map<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<T2, R> f) where E : Enum => @this.HasValue2 ? Tagged<E, T1, R>(@this.Tag, f(@this.Value2)) : new Tagged<E, T1, R>(@this.Tag, @this.Index, @this.UnionValue1, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R, T2> FlatMap<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T1), Tagged<E, R, T2>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R> FlatMap<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T2), Tagged<E, T1, R>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, R, T2> Bind<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T1), Tagged<E, R, T2>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R> Bind<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T2), Tagged<E, T1, R>> f) where E : Enum => f((@this.Tag, @this.Value2));
+    public static Tagged<E, R, T2> FlatMap<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T1), Tagged<E, R, T2>> f) where E : Enum => @this.HasValue1 ? f((@this.Tag, @this.Value1)) : new Tagged<E, R, T2>(@this.Tag, @this.Index, default, @this.UnionValue2);
+    public static Tagged<E, T1, R> FlatMap<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T2), Tagged<E, T1, R>> f) where E : Enum => @this.HasValue2 ? f((@this.Tag, @this.Value2)) : new Tagged<E, T1, R>(@this.Tag, @this.Index, @this.UnionValue1, default);
+    public static Tagged<E, R, T2> Bind<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T1), Tagged<E, R, T2>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, R> Bind<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<(E, T2), Tagged<E, T1, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
 
     #region Applicative Functor
@@ -161,27 +140,6 @@ namespace Endofunk.FX {
     public static Tagged<E, T1, R> Apply<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Tagged<E, T1, Func<T2, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, R, T2> Apply<E, T1, T2, R>(this Tagged<E, Func<T1, R>, T2> fn, Tagged<E, T1, T2> @this) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, R> Apply<E, T1, T2, R>(this Tagged<E, T1, Func<T2, R>> fn, Tagged<E, T1, T2> @this) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
-    #endregion
-
-    #region Match
-    public static void Match<E, T1, T2>(this Tagged<E, T1, T2> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1, T2>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, T2, R>(this Tagged<E, T1, T2> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1, T2>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
     #endregion
 
     #region DebugPrint
@@ -212,64 +170,43 @@ namespace Endofunk.FX {
   [DataContract]
   public sealed class Tagged<E, T1, T2, T3> where E : Enum {
     [DataMember] public readonly E Tag;
-    [DataMember] private readonly int Index;
+    [DataMember] internal readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
-    [DataMember] private readonly T1 UnionValue1;
-    [DataMember] private readonly T2 UnionValue2;
-    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] internal readonly T1 UnionValue1;
+    [DataMember] internal readonly T2 UnionValue2;
+    [DataMember] internal readonly T3 UnionValue3;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3) = (tag, index, unionvalue1, unionvalue2, unionvalue3);
-    public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
-    public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}]";
+    public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T2 Value2 => HasValue2 ? UnionValue2 : throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T3 Value3 => HasValue3 ? UnionValue3 : throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue1 ? Value1.ToString() : "")}, {(HasValue2 ? Value2.ToString() : "")}, {(HasValue3 ? Value3.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 3 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R, T2, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3>(@this.Tag, f(@this.Value1));
-    public static Tagged<E, T1, R, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3>(@this.Tag, f(@this.Value2));
-    public static Tagged<E, T1, T2, R> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T3, R> f) where E : Enum => Tagged<E, T1, T2, R>(@this.Tag, f(@this.Value3));
+    public static Tagged<E, R, T2, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T1, R> f) where E : Enum => @this.HasValue1 ? Tagged<E, R, T2, T3>(@this.Tag, f(@this.Value1)) : new Tagged<E, R, T2, T3>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3);
+    public static Tagged<E, T1, R, T3> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T2, R> f) where E : Enum => @this.HasValue2 ? Tagged<E, T1, R, T3>(@this.Tag, f(@this.Value2)) : new Tagged<E, T1, R, T3>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3);
+    public static Tagged<E, T1, T2, R> Map<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<T3, R> f) where E : Enum => @this.HasValue3 ? Tagged<E, T1, T2, R>(@this.Tag, f(@this.Value3)) : new Tagged<E, T1, T2, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R, T2, T3> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T1), Tagged<E, R, T2, T3>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T2), Tagged<E, T1, R, T3>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T3), Tagged<E, T1, T2, R>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, R, T2, T3> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T1), Tagged<E, R, T2, T3>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T2), Tagged<E, T1, R, T3>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T3), Tagged<E, T1, T2, R>> f) where E : Enum => f((@this.Tag, @this.Value3));
+    public static Tagged<E, R, T2, T3> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T1), Tagged<E, R, T2, T3>> f) where E : Enum => @this.HasValue1 ? f((@this.Tag, @this.Value1)) : new Tagged<E, R, T2, T3>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3);
+    public static Tagged<E, T1, R, T3> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T2), Tagged<E, T1, R, T3>> f) where E : Enum => @this.HasValue2 ? f((@this.Tag, @this.Value2)) : new Tagged<E, T1, R, T3>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3);
+    public static Tagged<E, T1, T2, R> FlatMap<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T3), Tagged<E, T1, T2, R>> f) where E : Enum => @this.HasValue3 ? f((@this.Tag, @this.Value3)) : new Tagged<E, T1, T2, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default);
+    public static Tagged<E, R, T2, T3> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T1), Tagged<E, R, T2, T3>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, R, T3> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T2), Tagged<E, T1, R, T3>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, R> Bind<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<(E, T3), Tagged<E, T1, T2, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
 
     #region Applicative Functor
     public static Tagged<E, R, T2, T3> Apply<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Tagged<E, Func<T1, R>, T2, T3> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, R, T3> Apply<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Tagged<E, T1, Func<T2, R>, T3> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, R> Apply<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Tagged<E, T1, T2, Func<T3, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
-    #endregion
-
-    #region Match
-    public static void Match<E, T1, T2, T3>(this Tagged<E, T1, T2, T3> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1, T2, T3>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, T2, T3, R>(this Tagged<E, T1, T2, T3> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1, T2, T3>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
     #endregion
 
     #region DebugPrint
@@ -303,43 +240,43 @@ namespace Endofunk.FX {
   [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4> where E : Enum {
     [DataMember] public readonly E Tag;
-    [DataMember] private readonly int Index;
+    [DataMember] internal readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
-    [DataMember] private readonly T1 UnionValue1;
-    [DataMember] private readonly T2 UnionValue2;
-    [DataMember] private readonly T3 UnionValue3;
-    [DataMember] private readonly T4 UnionValue4;
+    [DataMember] internal readonly T1 UnionValue1;
+    [DataMember] internal readonly T2 UnionValue2;
+    [DataMember] internal readonly T3 UnionValue3;
+    [DataMember] internal readonly T4 UnionValue4;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4);
-    public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
-    public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
-    public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}]";
+    public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T2 Value2 => HasValue2 ? UnionValue2 : throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T3 Value3 => HasValue3 ? UnionValue3 : throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T4 Value4 => HasValue4 ? UnionValue4 : throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue1 ? Value1.ToString() : "")}, {(HasValue2 ? Value2.ToString() : "")}, {(HasValue3 ? Value3.ToString() : "")}, {(HasValue4 ? Value4.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 4 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R, T2, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4>(@this.Tag, f(@this.Value1));
-    public static Tagged<E, T1, R, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4>(@this.Tag, f(@this.Value2));
-    public static Tagged<E, T1, T2, R, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T3, R> f) where E : Enum => Tagged<E, T1, T2, R, T4>(@this.Tag, f(@this.Value3));
-    public static Tagged<E, T1, T2, T3, R> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T4, R> f) where E : Enum => Tagged<E, T1, T2, T3, R>(@this.Tag, f(@this.Value4));
+    public static Tagged<E, R, T2, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T1, R> f) where E : Enum => @this.HasValue1 ? Tagged<E, R, T2, T3, T4>(@this.Tag, f(@this.Value1)) : new Tagged<E, R, T2, T3, T4>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4);
+    public static Tagged<E, T1, R, T3, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T2, R> f) where E : Enum => @this.HasValue2 ? Tagged<E, T1, R, T3, T4>(@this.Tag, f(@this.Value2)) : new Tagged<E, T1, R, T3, T4>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4);
+    public static Tagged<E, T1, T2, R, T4> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T3, R> f) where E : Enum => @this.HasValue3 ? Tagged<E, T1, T2, R, T4>(@this.Tag, f(@this.Value3)) : new Tagged<E, T1, T2, R, T4>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4);
+    public static Tagged<E, T1, T2, T3, R> Map<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<T4, R> f) where E : Enum => @this.HasValue4 ? Tagged<E, T1, T2, T3, R>(@this.Tag, f(@this.Value4)) : new Tagged<E, T1, T2, T3, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R, T2, T3, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R>> f) where E : Enum => f((@this.Tag, @this.Value4));
-    public static Tagged<E, R, T2, T3, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R>> f) where E : Enum => f((@this.Tag, @this.Value4));
+    public static Tagged<E, R, T2, T3, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4>> f) where E : Enum => @this.HasValue1 ? f((@this.Tag, @this.Value1)) : new Tagged<E, R, T2, T3, T4>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4);
+    public static Tagged<E, T1, R, T3, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4>> f) where E : Enum => @this.HasValue2 ? f((@this.Tag, @this.Value2)) : new Tagged<E, T1, R, T3, T4>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4);
+    public static Tagged<E, T1, T2, R, T4> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4>> f) where E : Enum => @this.HasValue3 ? f((@this.Tag, @this.Value3)) : new Tagged<E, T1, T2, R, T4>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4);
+    public static Tagged<E, T1, T2, T3, R> FlatMap<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R>> f) where E : Enum => @this.HasValue4 ? f((@this.Tag, @this.Value4)) : new Tagged<E, T1, T2, T3, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default);
+    public static Tagged<E, R, T2, T3, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, R, T3, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, R, T4> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, R> Bind<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
 
     #region Applicative Functor
@@ -347,27 +284,6 @@ namespace Endofunk.FX {
     public static Tagged<E, T1, R, T3, T4> Apply<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Tagged<E, T1, Func<T2, R>, T3, T4> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, R, T4> Apply<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Tagged<E, T1, T2, Func<T3, R>, T4> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, T3, R> Apply<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Tagged<E, T1, T2, T3, Func<T4, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
-    #endregion
-
-    #region Match
-    public static void Match<E, T1, T2, T3, T4>(this Tagged<E, T1, T2, T3, T4> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1, T2, T3, T4>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, T2, T3, T4, R>(this Tagged<E, T1, T2, T3, T4> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1, T2, T3, T4>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
     #endregion
 
     #region DebugPrint
@@ -399,54 +315,53 @@ namespace Endofunk.FX {
   }
   #endregion
 
-
   #region Tagged 5
   [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4, T5> where E : Enum {
     [DataMember] public readonly E Tag;
-    [DataMember] private readonly int Index;
+    [DataMember] internal readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
-    [DataMember] private readonly T1 UnionValue1;
-    [DataMember] private readonly T2 UnionValue2;
-    [DataMember] private readonly T3 UnionValue3;
-    [DataMember] private readonly T4 UnionValue4;
-    [DataMember] private readonly T5 UnionValue5;
+    [DataMember] internal readonly T1 UnionValue1;
+    [DataMember] internal readonly T2 UnionValue2;
+    [DataMember] internal readonly T3 UnionValue3;
+    [DataMember] internal readonly T4 UnionValue4;
+    [DataMember] internal readonly T5 UnionValue5;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5);
-    public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
-    public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
-    public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
-    public T5 Value5 => !HasValue5 ? throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue5;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}, {Value5.ToString()}]";
+    public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T2 Value2 => HasValue2 ? UnionValue2 : throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T3 Value3 => HasValue3 ? UnionValue3 : throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T4 Value4 => HasValue4 ? UnionValue4 : throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T5 Value5 => HasValue5 ? UnionValue5 : throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue1 ? Value1.ToString() : "")}, {(HasValue2 ? Value2.ToString() : "")}, {(HasValue3 ? Value3.ToString() : "")}, {(HasValue4 ? Value4.ToString() : "")}, {(HasValue5 ? Value5.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 5 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R, T2, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4, T5>(@this.Tag, f(@this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4, T5>(@this.Tag, f(@this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T3, R> f) where E : Enum => Tagged<E, T1, T2, R, T4, T5>(@this.Tag, f(@this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T4, R> f) where E : Enum => Tagged<E, T1, T2, T3, R, T5>(@this.Tag, f(@this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T5, R> f) where E : Enum => Tagged<E, T1, T2, T3, T4, R>(@this.Tag, f(@this.Value5));
+    public static Tagged<E, R, T2, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T1, R> f) where E : Enum => @this.HasValue1 ? Tagged<E, R, T2, T3, T4, T5>(@this.Tag, f(@this.Value1)) : new Tagged<E, R, T2, T3, T4, T5>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, R, T3, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T2, R> f) where E : Enum => @this.HasValue2 ? Tagged<E, T1, R, T3, T4, T5>(@this.Tag, f(@this.Value2)) : new Tagged<E, T1, R, T3, T4, T5>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, T2, R, T4, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T3, R> f) where E : Enum => @this.HasValue3 ? Tagged<E, T1, T2, R, T4, T5>(@this.Tag, f(@this.Value3)) : new Tagged<E, T1, T2, R, T4, T5>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, T2, T3, R, T5> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T4, R> f) where E : Enum => @this.HasValue4 ? Tagged<E, T1, T2, T3, R, T5>(@this.Tag, f(@this.Value4)) : new Tagged<E, T1, T2, T3, R, T5>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default, @this.UnionValue5);
+    public static Tagged<E, T1, T2, T3, T4, R> Map<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<T5, R> f) where E : Enum => @this.HasValue5 ? Tagged<E, T1, T2, T3, T4, R>(@this.Tag, f(@this.Value5)) : new Tagged<E, T1, T2, T3, T4, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R, T2, T3, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5>> f) where E : Enum => f((@this.Tag, @this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R>> f) where E : Enum => f((@this.Tag, @this.Value5));
-    public static Tagged<E, R, T2, T3, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5>> f) where E : Enum => f((@this.Tag, @this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R>> f) where E : Enum => f((@this.Tag, @this.Value5));
+    public static Tagged<E, R, T2, T3, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5>> f) where E : Enum => @this.HasValue1 ? f((@this.Tag, @this.Value1)) : new Tagged<E, R, T2, T3, T4, T5>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, R, T3, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5>> f) where E : Enum => @this.HasValue2 ? f((@this.Tag, @this.Value2)) : new Tagged<E, T1, R, T3, T4, T5>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, T2, R, T4, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5>> f) where E : Enum => @this.HasValue3 ? f((@this.Tag, @this.Value3)) : new Tagged<E, T1, T2, R, T4, T5>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4, @this.UnionValue5);
+    public static Tagged<E, T1, T2, T3, R, T5> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5>> f) where E : Enum => @this.HasValue4 ? f((@this.Tag, @this.Value4)) : new Tagged<E, T1, T2, T3, R, T5>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default, @this.UnionValue5);
+    public static Tagged<E, T1, T2, T3, T4, R> FlatMap<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R>> f) where E : Enum => @this.HasValue5 ? f((@this.Tag, @this.Value5)) : new Tagged<E, T1, T2, T3, T4, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, default);
+    public static Tagged<E, R, T2, T3, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, R, T3, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, R, T4, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, R, T5> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, T4, R> Bind<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
 
     #region Applicative Functor
@@ -455,27 +370,6 @@ namespace Endofunk.FX {
     public static Tagged<E, T1, T2, R, T4, T5> Apply<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Tagged<E, T1, T2, Func<T3, R>, T4, T5> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, T3, R, T5> Apply<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Tagged<E, T1, T2, T3, Func<T4, R>, T5> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, T3, T4, R> Apply<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Tagged<E, T1, T2, T3, T4, Func<T5, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
-    #endregion
-
-    #region Match
-    public static void Match<E, T1, T2, T3, T4, T5>(this Tagged<E, T1, T2, T3, T4, T5> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1, T2, T3, T4, T5>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, T2, T3, T4, T5, R>(this Tagged<E, T1, T2, T3, T4, T5> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1, T2, T3, T4, T5>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
     #endregion
 
     #region DebugPrint
@@ -509,61 +403,60 @@ namespace Endofunk.FX {
     #endregion
   }
   #endregion
-
-
+  
   #region Tagged 6
   [DataContract]
   public sealed class Tagged<E, T1, T2, T3, T4, T5, T6> where E : Enum {
     [DataMember] public readonly E Tag;
-    [DataMember] private readonly int Index;
+    [DataMember] internal readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
     public bool HasValue6 => Index == 6;
-    [DataMember] private readonly T1 UnionValue1;
-    [DataMember] private readonly T2 UnionValue2;
-    [DataMember] private readonly T3 UnionValue3;
-    [DataMember] private readonly T4 UnionValue4;
-    [DataMember] private readonly T5 UnionValue5;
-    [DataMember] private readonly T6 UnionValue6;
+    [DataMember] internal readonly T1 UnionValue1;
+    [DataMember] internal readonly T2 UnionValue2;
+    [DataMember] internal readonly T3 UnionValue3;
+    [DataMember] internal readonly T4 UnionValue4;
+    [DataMember] internal readonly T5 UnionValue5;
+    [DataMember] internal readonly T6 UnionValue6;
     private Tagged() { }
     internal Tagged(E tag, int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5, T6 unionvalue6) => (Tag, Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5, UnionValue6) = (tag, index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5, unionvalue6);
-    public T1 Value1 => !HasValue1 ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue1;
-    public T2 Value2 => !HasValue2 ? throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue2;
-    public T3 Value3 => !HasValue3 ? throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue3;
-    public T4 Value4 => !HasValue4 ? throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue4;
-    public T5 Value5 => !HasValue5 ? throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue5;
-    public T6 Value6 => !HasValue6 ? throw new InvalidOperationException($"Can't return {typeof(T6).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.") : UnionValue6;
-    public override string ToString() => $"{this.GetType().Simplify()}[{Value1.ToString()}, {Value2.ToString()}, {Value3.ToString()}, {Value4.ToString()}, {Value5.ToString()}, {Value6.ToString()}]";
+    public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T2 Value2 => HasValue2 ? UnionValue2 : throw new InvalidOperationException($"Can't return {typeof(T2).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T3 Value3 => HasValue3 ? UnionValue3 : throw new InvalidOperationException($"Can't return {typeof(T3).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T4 Value4 => HasValue4 ? UnionValue4 : throw new InvalidOperationException($"Can't return {typeof(T4).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T5 Value5 => HasValue5 ? UnionValue5 : throw new InvalidOperationException($"Can't return {typeof(T5).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public T6 Value6 => HasValue6 ? UnionValue6 : throw new InvalidOperationException($"Can't return {typeof(T6).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
+    public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue1 ? Value1.ToString() : "")}, {(HasValue2 ? Value2.ToString() : "")}, {(HasValue3 ? Value3.ToString() : "")}, {(HasValue4 ? Value4.ToString() : "")}, {(HasValue5 ? Value5.ToString() : "")}, {(HasValue6 ? Value6.ToString() : "")}]";
   }
   #endregion
 
   #region Tagged 6 - Extensions
   public static partial class TaggedExtensions {
     #region Functor
-    public static Tagged<E, R, T2, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T1, R> f) where E : Enum => Tagged<E, R, T2, T3, T4, T5, T6>(@this.Tag, f(@this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T2, R> f) where E : Enum => Tagged<E, T1, R, T3, T4, T5, T6>(@this.Tag, f(@this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T3, R> f) where E : Enum => Tagged<E, T1, T2, R, T4, T5, T6>(@this.Tag, f(@this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T4, R> f) where E : Enum => Tagged<E, T1, T2, T3, R, T5, T6>(@this.Tag, f(@this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T5, R> f) where E : Enum => Tagged<E, T1, T2, T3, T4, R, T6>(@this.Tag, f(@this.Value5));
-    public static Tagged<E, T1, T2, T3, T4, T5, R> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T6, R> f) where E : Enum => Tagged<E, T1, T2, T3, T4, T5, R>(@this.Tag, f(@this.Value6));
+    public static Tagged<E, R, T2, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T1, R> f) where E : Enum => @this.HasValue1 ? Tagged<E, R, T2, T3, T4, T5, T6>(@this.Tag, f(@this.Value1)) : new Tagged<E, R, T2, T3, T4, T5, T6>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, R, T3, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T2, R> f) where E : Enum => @this.HasValue2 ? Tagged<E, T1, R, T3, T4, T5, T6>(@this.Tag, f(@this.Value2)) : new Tagged<E, T1, R, T3, T4, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, R, T4, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T3, R> f) where E : Enum => @this.HasValue3 ? Tagged<E, T1, T2, R, T4, T5, T6>(@this.Tag, f(@this.Value3)) : new Tagged<E, T1, T2, R, T4, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, R, T5, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T4, R> f) where E : Enum => @this.HasValue4 ? Tagged<E, T1, T2, T3, R, T5, T6>(@this.Tag, f(@this.Value4)) : new Tagged<E, T1, T2, T3, R, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, T4, R, T6> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T5, R> f) where E : Enum => @this.HasValue5 ? Tagged<E, T1, T2, T3, T4, R, T6>(@this.Tag, f(@this.Value5)) : new Tagged<E, T1, T2, T3, T4, R, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, default, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, T4, T5, R> Map<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<T6, R> f) where E : Enum => @this.HasValue6 ? Tagged<E, T1, T2, T3, T4, T5, R>(@this.Tag, f(@this.Value6)) : new Tagged<E, T1, T2, T3, T4, T5, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, default);
     #endregion
 
     #region Monad
-    public static Tagged<E, R, T2, T3, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R, T6>> f) where E : Enum => f((@this.Tag, @this.Value5));
-    public static Tagged<E, T1, T2, T3, T4, T5, R> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T6), Tagged<E, T1, T2, T3, T4, T5, R>> f) where E : Enum => f((@this.Tag, @this.Value6));
-    public static Tagged<E, R, T2, T3, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value1));
-    public static Tagged<E, T1, R, T3, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value2));
-    public static Tagged<E, T1, T2, R, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value3));
-    public static Tagged<E, T1, T2, T3, R, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5, T6>> f) where E : Enum => f((@this.Tag, @this.Value4));
-    public static Tagged<E, T1, T2, T3, T4, R, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R, T6>> f) where E : Enum => f((@this.Tag, @this.Value5));
-    public static Tagged<E, T1, T2, T3, T4, T5, R> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T6), Tagged<E, T1, T2, T3, T4, T5, R>> f) where E : Enum => f((@this.Tag, @this.Value6));
+    public static Tagged<E, R, T2, T3, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5, T6>> f) where E : Enum => @this.HasValue1 ? f((@this.Tag, @this.Value1)) : new Tagged<E, R, T2, T3, T4, T5, T6>(@this.Tag, @this.Index, default, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, R, T3, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5, T6>> f) where E : Enum => @this.HasValue2 ? f((@this.Tag, @this.Value2)) : new Tagged<E, T1, R, T3, T4, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, default, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, R, T4, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5, T6>> f) where E : Enum => @this.HasValue3 ? f((@this.Tag, @this.Value3)) : new Tagged<E, T1, T2, R, T4, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, default, @this.UnionValue4, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, R, T5, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5, T6>> f) where E : Enum => @this.HasValue4 ? f((@this.Tag, @this.Value4)) : new Tagged<E, T1, T2, T3, R, T5, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, default, @this.UnionValue5, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, T4, R, T6> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R, T6>> f) where E : Enum => @this.HasValue5 ? f((@this.Tag, @this.Value5)) : new Tagged<E, T1, T2, T3, T4, R, T6>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, default, @this.UnionValue6);
+    public static Tagged<E, T1, T2, T3, T4, T5, R> FlatMap<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T6), Tagged<E, T1, T2, T3, T4, T5, R>> f) where E : Enum => @this.HasValue6 ? f((@this.Tag, @this.Value6)) : new Tagged<E, T1, T2, T3, T4, T5, R>(@this.Tag, @this.Index, @this.UnionValue1, @this.UnionValue2, @this.UnionValue3, @this.UnionValue4, @this.UnionValue5, default);
+    public static Tagged<E, R, T2, T3, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T1), Tagged<E, R, T2, T3, T4, T5, T6>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, R, T3, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T2), Tagged<E, T1, R, T3, T4, T5, T6>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, R, T4, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T3), Tagged<E, T1, T2, R, T4, T5, T6>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, R, T5, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T4), Tagged<E, T1, T2, T3, R, T5, T6>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, T4, R, T6> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T5), Tagged<E, T1, T2, T3, T4, R, T6>> f) where E : Enum => @this.FlatMap(f);
+    public static Tagged<E, T1, T2, T3, T4, T5, R> Bind<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<(E, T6), Tagged<E, T1, T2, T3, T4, T5, R>> f) where E : Enum => @this.FlatMap(f);
     #endregion
 
     #region Applicative Functor
@@ -573,27 +466,6 @@ namespace Endofunk.FX {
     public static Tagged<E, T1, T2, T3, R, T5, T6> Apply<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Tagged<E, T1, T2, T3, Func<T4, R>, T5, T6> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, T3, T4, R, T6> Apply<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Tagged<E, T1, T2, T3, T4, Func<T5, R>, T6> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
     public static Tagged<E, T1, T2, T3, T4, T5, R> Apply<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Tagged<E, T1, T2, T3, T4, T5, Func<T6, R>> fn) where E : Enum => fn.FlatMap(g => @this.Map(x => g.Item2(x)));
-    #endregion
-
-    #region Match
-    public static void Match<E, T1, T2, T3, T4, T5, T6>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Action unmatched, params (Func<E, bool> predicate, Action<Tagged<E, T1, T2, T3, T4, T5, T6>> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          f(@this);
-          return;
-        }
-      }
-      unmatched();
-    }
-
-    public static R Match<E, T1, T2, T3, T4, T5, T6, R>(this Tagged<E, T1, T2, T3, T4, T5, T6> @this, Func<R> unmatched, params (Func<E, bool> predicate, Func<Tagged<E, T1, T2, T3, T4, T5, T6>, R> f)[] eval) where E : Enum {
-      foreach (var (predicate, f) in eval) {
-        if (predicate(@this.Tag)) {
-          return f(@this);
-        }
-      }
-      return unmatched();
-    }
     #endregion
 
     #region DebugPrint

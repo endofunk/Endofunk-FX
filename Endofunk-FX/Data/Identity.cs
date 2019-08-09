@@ -28,7 +28,7 @@ using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
   #region Identity Datatype
-  [DataContract] public class Identity<A> : IEquatable<Identity<A>> {
+  [DataContract] public sealed class Identity<A> : IEquatable<Identity<A>> {
     [DataMember] internal readonly A Value;
     private Identity(A value) => (Value) = (value);
     public static implicit operator Identity<A>(A value) => Of(value);

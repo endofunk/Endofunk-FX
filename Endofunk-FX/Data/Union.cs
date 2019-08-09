@@ -1,29 +1,29 @@
-﻿// Prelude.cs
-//
-// MIT License
-// Copyright (c) 2019 endofunk
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+﻿//// Prelude.cs
+////
+//// MIT License
+//// Copyright (c) 2019 endofunk
+////
+//// Permission is hereby granted, free of charge, to any person obtaining a copy
+//// of this software and associated documentation files (the "Software"), to deal
+//// in the Software without restriction, including without limitation the rights
+//// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//// copies of the Software, and to permit persons to whom the Software is
+//// furnished to do so, subject to the following conditions:
+////
+//// The above copyright notice and this permission notice shall be included in
+//// all copies or substantial portions of the Software.
+////
+//// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//// THE SOFTWARE.
 
 //using System;
 
-//namespace Endofunk.FX  {
+//namespace Endofunk.FX {
 
 //  #region Union 1
 //  public sealed class Union<T1> {
@@ -32,11 +32,11 @@
 //    private Union() { }
 //    internal Union(bool hasvalue, T1 unionvalue) => (HasValue, UnionValue) = (hasvalue, unionvalue);
 //    public T1 Value => !HasValue ? throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.") : UnionValue;
-//    public override string ToString() => $"Union<{typeof(T1).Simplify()}>[{Value}]";
+//    public override string ToString() => $"{this.GetType().Simplify()}[{UnionValue.ToString()}]";
 //    public static implicit operator Union<T1>(T1 t1) => new Union<T1>(true, t1);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1> Union<T1>() => new Union<T1>(false, default);
 //    public static Union<T1> Union<T1>(T1 value) => new Union<T1>(true, value);
@@ -110,7 +110,7 @@
 //    public static implicit operator Union<T1, T2>(T2 t2) => new Union<T1, T2>(2, default, t2);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1, T2> Union<T1, T2>() => new Union<T1, T2>(0, default, default);
 //    public static Union<T1, T2> Union<T1, T2>(T1 value) => new Union<T1, T2>(1, value, default);
@@ -149,9 +149,7 @@
 
 //    public static R Match<T1, T2, R>(this Union<T1, T2> @this, Func<R> unmatched, params (Predicate<Union<T1, T2>> predicate, Func<Union<T1, T2>, R> f)[] eval) {
 //      foreach (var (predicate, f) in eval) {
-//        if (predicate(@this)) {
-//          return f(@this);
-//        }
+//        if (predicate(@this)) return f(@this);
 //      }
 //      return unmatched();
 //    }
@@ -190,7 +188,7 @@
 //    public static implicit operator Union<T1, T2, T3>(T3 t3) => new Union<T1, T2, T3>(3, default, default, t3);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1, T2, T3> Union<T1, T2, T3>() => new Union<T1, T2, T3>(0, default, default, default);
 //    public static Union<T1, T2, T3> Union<T1, T2, T3>(T1 value) => new Union<T1, T2, T3>(1, value, default, default);
@@ -279,7 +277,7 @@
 //    public static implicit operator Union<T1, T2, T3, T4>(T4 t4) => new Union<T1, T2, T3, T4>(4, default, default, default, t4);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1, T2, T3, T4> Union<T1, T2, T3, T4>() => new Union<T1, T2, T3, T4>(0, default, default, default, default);
 //    public static Union<T1, T2, T3, T4> Union<T1, T2, T3, T4>(T1 value) => new Union<T1, T2, T3, T4>(1, value, default, default, default);
@@ -379,7 +377,7 @@
 //    public static implicit operator Union<T1, T2, T3, T4, T5>(T5 t5) => new Union<T1, T2, T3, T4, T5>(5, default, default, default, default, t5);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1, T2, T3, T4, T5> Union<T1, T2, T3, T4, T5>() => new Union<T1, T2, T3, T4, T5>(0, default, default, default, default, default);
 //    public static Union<T1, T2, T3, T4, T5> Union<T1, T2, T3, T4, T5>(T1 value) => new Union<T1, T2, T3, T4, T5>(1, value, default, default, default, default);
@@ -490,7 +488,7 @@
 //    public static implicit operator Union<T1, T2, T3, T4, T5, T6>(T6 t6) => new Union<T1, T2, T3, T4, T5, T6>(6, default, default, default, default, default, t6);
 //  }
 
-//  public static partial class Prelude {
+//  public static partial class UnionExtensions {
 //    #region Syntactic Sugar
 //    public static Union<T1, T2, T3, T4, T5, T6> Union<T1, T2, T3, T4, T5, T6>() => new Union<T1, T2, T3, T4, T5, T6>(0, default, default, default, default, default, default);
 //    public static Union<T1, T2, T3, T4, T5, T6> Union<T1, T2, T3, T4, T5, T6>(T1 value) => new Union<T1, T2, T3, T4, T5, T6>(1, value, default, default, default, default, default);

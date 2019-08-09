@@ -43,7 +43,7 @@ namespace Endofunk.Tests {
       var r = Success<string, Func<int, int>>(Increment)
         .Apply(Success<string, Func<int, int>>(Square)
         .Apply(Success<string, int>(2)));
-      var l = Compose<int, int, int>().Curry()
+      var l = Compose<int, int, int>()
         .Map(Success<string, Func<int, int>>(Increment))
         .Apply(Success<string, Func<int, int>>(Square))
         .Apply(Success<string, int>(2));
@@ -55,7 +55,7 @@ namespace Endofunk.Tests {
       var r = Success<string, Func<int, int>>(Increment)
         .Apply(Success<string, Func<int, int>>(Square)
         .Apply(Success<string, int>(2)));
-      var l = Success<string, Func<Func<int, int>, Func<Func<int, int>, Func<int, int>>>>(Compose<int, int, int>().Curry())
+      var l = Success<string, Func<Func<int, int>, Func<Func<int, int>, Func<int, int>>>>(Compose<int, int, int>())
         .Apply(Success<string, Func<int, int>>(Increment))
         .Apply(Success<string, Func<int, int>>(Square))
         .Apply(Success<string, int>(2));

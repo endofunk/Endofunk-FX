@@ -27,10 +27,61 @@ using System.Linq;
 using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
-
   public static partial class Prelude {
+    #region Basic Combinators
+    public static A Id<A>(A a) => a;
+    public static Func<A, B, A> Const<A, B>() => (a, b) => a;
+    public static Func<B, A> Const<A, B>(A a) => b => a;
+    public static Func<A, A> Id<A>() => a => a;
+    public static Func<A, Maybe<A>> Id2<A>() => a => a;
+    public static Func<A, B, B> Seq<A, B>() => (a, b) => b;
+    public static Func<B, B> Seq<A, B>(A a) => b => b;
+    #endregion
 
+    #region With / Then / Select
+    public static A With<A>(this A a, Action<A> f) { f(a); return a; }
+    public static B Then<A, B>(this A @this, Func<A, B> f) => @this == null ? default : f(@this);
+    public static void Then<A>(this A @this, Action<A> f) { if (@this != null) f(@this); }
+    #endregion
+
+    public static bool IsMultipleOf(this int n, int m) => n % m == 0;
+    public static Predicate<int> IsMultipleOf(this int n) => m => n % m == 0;
+
+    #region Boolean Combinators
+    public static bool Validate<A>(this A @this, Predicate<A> predicate) => predicate(@this);
+    public static A Bool<A>(this A x, A y, bool cond) => cond ? y : x;
+    public static Func<A, Func<A, Func<bool, A>>> Bool<A>() => x => y => cond => cond ? y : x;
+    public static bool Not(this bool a) => !a;
+    public static bool And(this bool a, bool b) => a && b;
+    public static bool Or(this bool a, bool b) => a || b;
+    public static Predicate<A> ToPredicate<A>(this Func<A, bool> f) => new Predicate<A>(f);
+    public static bool ForEither<A>(this Predicate<A> p, params A[] sm) where A : IComparable<A> {
+      foreach (var e in sm) {
+        if (p(e)) return true;
+      }
+      return false;
+    }
+    public static bool ForEither<A>(this Func<A, bool> p, params A[] sm) where A : IComparable<A> => p.ToPredicate().ForEither(sm);
+    public static bool ForAll<A>(this Predicate<A> p, params A[] sm) where A : IComparable<A> => Array.TrueForAll(sm, p);
+    public static bool ForAll<A>(this Func<A, bool> p, params A[] sm) where A : IComparable<A> => Array.TrueForAll(sm, p.ToPredicate());
+    public static Func<A, bool> Equals<A>(this A value) => a => a.Equals(value);
+    #endregion
+
+    #region Composition
     /// <summary>
+    /// Left-to-right composition of unary `lhs` on unary `rhs`.
+    /// This is the function such that `lhs.Compose(rhs)(a)` = `rhs(lhs(a))`.
+    /// </summary>
+    //public static Func<Func<B, C>, Func<A, B>, Func<A, C>> Compose<A, B, C>() => (lhs, rhs) => rhs.Compose(lhs);
+
+    public static Func<A, A> Compose<A>(Func<A, A> f, Func<A, A> g) => f.Compose(g);
+    public static Func<A, C> Compose<A, B, C>(Func<A, B> f, Func<B, C> g) => f.Compose(g);
+    public static Func<Func<A, B>, Func<Func<B, C>, Func<A, C>>> Compose<A, B, C>() => f => g => f.Compose(g);
+    public static Func<A, B, C> Compose<A, B, C>(Func<A, B, C> f, Func<A, A> g) => (a, b) => f(g(a), b);
+    #endregion
+
+    #region Flipped 
+    /// <summary> 
     /// Takes its (first) two arguments in the reverse order.
     /// flip :: ((a, b) -> c) -> ((b, a) -> c)
     /// </summary>
@@ -41,6 +92,7 @@ namespace Endofunk.FX {
     /// flip :: ((a, b) -> c) -> ((b, a) -> c)
     /// </summary>
     public static Func<Func<A, B, C>, Func<B, A, C>> Flip<A, B, C>() => f => (b, a) => f(a, b);
+    #endregion
 
     #region Lift to Func Form
     public static Func<A> Fun<A>(Func<A> fn) => fn;
@@ -86,7 +138,6 @@ namespace Endofunk.FX {
     /// </summary>
     public static Func<Func<A, A>, Func<A, A>> Until<A>(Func<A, bool> predicate) => f => a => predicate(a) ? a : Until(predicate)(f)(f(a));
     #endregion
-
   }
 
   public static class FunctionExtensions {

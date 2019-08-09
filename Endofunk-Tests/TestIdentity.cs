@@ -37,7 +37,7 @@ namespace Endofunk.Tests {
   
     [Test] public void Applicative1stCompositionLaw() {
       var r = Of(Increment).Apply(Of(Square).Apply(Of(2)));
-      var l = Compose<int, int, int>().Curry()
+      var l = Compose<int, int, int>()
         .Map(Of(Increment))
         .Apply(Of(Square))
         .Apply(Of(2));
@@ -48,7 +48,7 @@ namespace Endofunk.Tests {
       var r = Of(Increment)
         .Apply(Of(Square)
         .Apply(Of(2)));
-      var l = Of(Compose<int, int, int>().Curry())
+      var l = Of(Compose<int, int, int>())
         .Apply(Of(Increment))
         .Apply(Of(Square))
         .Apply(Of(2));

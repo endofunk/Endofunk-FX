@@ -29,7 +29,7 @@ using static Endofunk.FX.Prelude;
 namespace Endofunk.FX {
 
   #region IO Datatype
-  public struct IO<A> {
+  public sealed class IO<A> {
     public readonly Func<A> Compute;
     public IO(Func<A> compute) => (Compute) = (compute);
     public static IO<A> Of(Func<A> compute) => new IO<A>(compute);

@@ -30,7 +30,7 @@ using System.Runtime.Serialization;
 namespace Endofunk.FX {
 
   #region Reader Datatype
-  [DataContract] public struct Reader<Env, A> : IEquatable<Reader<Env, A>> {
+  [DataContract] public sealed class Reader<Env, A> : IEquatable<Reader<Env, A>> {
     [DataMember] internal readonly Func<Env, A> Value;
     public Func<Env, A> RunReader => Value;
     private Reader(Func<Env, A> value) => (Value) = (value);

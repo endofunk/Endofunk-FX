@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
@@ -106,8 +107,8 @@ namespace Endofunk.FX {
     #endregion
 
     #region Filterable
-    public static IEnumerable<A> Filter<A>(this Func<A, bool> fn, IEnumerable<A> xs) => xs.Filter(fn);
-    public static IEnumerable<A> Filter<A>(this IEnumerable<A> xs, Func<A, bool> fn) => xs.Fold(Enumerable.Empty<A>(), (a, e) => fn(e) ? a.Append(e) : a);
+    public static IEnumerable<A> Filter<A>(this Func<A, bool> fn, IEnumerable<A> xs) => xs.Where(fn);
+    public static IEnumerable<A> Filter<A>(this IEnumerable<A> xs, Func<A, bool> fn) => xs.Where(fn);
     #endregion
 
     #region Applicative Functor
@@ -198,7 +199,7 @@ namespace Endofunk.FX {
     #endregion
 
     #region DebugPrint
-    public static void DebugPrint<A>(this IEnumerable<A> xs, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", $"{xs.GetType().Simplify()}[{xs.ToJsonString()}]");
+    public static void DebugPrint<A>(this IEnumerable<A> xs, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", $"{xs.GetType().Simplify()}{xs.ToJsonString()}");
     #endregion
 
     #region ToList

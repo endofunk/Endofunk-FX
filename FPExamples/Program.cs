@@ -37,7 +37,13 @@ using System.Runtime.CompilerServices;
 
 namespace FPExamples {
 
-  using IpOctet = System.ValueTuple<int, int, int, int>;
+  using IpOctet = ValueTuple<byte, byte, byte, byte>;
+
+  public enum Option { Some, None }
+
+  public enum Either { Left, Right }
+
+  public enum BinaryTree { Empty, Leaf, Node };
 
   public struct Bicycle {
     public string Make;
@@ -79,7 +85,7 @@ namespace FPExamples {
   //}
 
   public enum Direction {
-    North, South, East, West, Degree
+    North = 1, South, East, West, Degree
   }
 
 
@@ -87,53 +93,11 @@ namespace FPExamples {
     V4, V6
   }
 
-  public static class TypeExtensions {
-    public static string TypeToString(this Type type) => type.Name + (type.IsGenericType ? "<" + type.GenericTypeArguments.Map(x => TypeToString(x)).Join(",") + ">" : "");
-    //public static string TypeToValues<A>(this A a) => a.GetType().IsGenericType ? "[" + TypeToValue(a) + "]"
-
-    public static IEnumerable<MethodInfo> GetExtensionMethodsForType(this Type extendedType) {
-      return AppDomain.CurrentDomain
-                      .GetAssemblies()
-                      .Select(asm => GetExtensionMethods(asm, extendedType))
-                      .Aggregate((a, b) => a.Union(b));
-    }
-
-    private static IEnumerable<MethodInfo> GetExtensionMethods(Assembly assembly, Type extendedType) {
-      var query = from type in assembly.GetTypes()
-                  //where type.IsSealed && !type.IsGenericType && !type.IsNested
-                  //from method in type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                  from method in type.GetMethods()
-                  where method.IsDefined(typeof(ExtensionAttribute), false)
-                  where method.GetParameters()[0].ParameterType == extendedType
-                  select method;
-      return query;
-    }
-
-    public static bool Contains(this Type type, string method) => GetExtensionMethodsForType(type).Map(x => x.Name).Contains(method);
-  }
-
-  //internal static class ExtensionMethodsHelper {
-  //  private static readonly ConcurrentDictionary<Type, IDictionary<string, MethodInfo>> methodsMap = new ConcurrentDictionary<Type, IDictionary<string, MethodInfo>>();
-
-  //  //[MethodImpl(MethodImplOptions.Synchronized)]
-  //  //public static MethodInfo GetExtensionMethodOrNull(Type type, string methodName) {
-  //  //  var methodsForType = methodsMap.GetOrAdd(type, GetExtensionMethodsForType);
-  //  //  return methodsForType.ContainsKey(methodName)
-  //  //      ? methodsForType[methodName]
-  //  //      : null;
-  //  //}
-
-  //  public static IEnumerable<MethodInfo> GetExtensionMethodsForType(Type extendedType) {
-  //    return AppDomain.CurrentDomain
-  //                    .GetAssemblies()
-  //                    .Select(asm => GetExtensionMethods(asm, extendedType))
-  //                    .Aggregate((a, b) => a.Union(b));
-  //  }
-
-
-  //}
-
   class Program {
+
+    
+    public static int Increment2(int x) => x + 1;
+    public static int Square2(int x) => x + 1;
 
 
 
@@ -176,14 +140,13 @@ namespace FPExamples {
     public static int SquareArea(int a, int b) { WriteLine($"{a} + {b} => {a * b}"); return a * b; }
     public delegate int BinaryOp(int a, int b);
 
-    public static void Process(Tagged<Direction, int> d) => d.Match(
-      unmatched: () => WriteLine("Unmatched"),
-      (Direction.North.Equals(), _ => WriteLine("North")),
-      (Direction.South.Equals(), _ => WriteLine("South")),
-      (Direction.East.Equals(), _ => WriteLine("East")),
-      (Direction.West.Equals(), _ => WriteLine("West")),
-      (Direction.Degree.Equals(), t => WriteLine($"{t.Value}"))
-    );
+    public static void Process(Tagged<Direction, int> d) => d.Switch(t => t.Tag)
+      .Case(Direction.North, _ => WriteLine("North"))
+      .Case(Direction.South, _ => WriteLine("South"))
+      .Case(Direction.East, _ => WriteLine("East"))
+      .Case(Direction.West, _ => WriteLine("West"))
+      .Case(Direction.Degree, t => WriteLine($"{t.Value}"))
+      .Else(_ => WriteLine("Unmatched"));
 
     static void Main(string[] args) {
 
@@ -413,50 +376,23 @@ namespace FPExamples {
       Economics
         .DebugPrint();
 
-      Economics.Match(
-        () => WriteLine("Default: No Match"),
-        (Subject.Mathematics.Equals(), (a) => WriteLine($"Mathematics: {a}")),
-        (Subject.Economics.Equals(), (a) => WriteLine($"Economics: {a}")),
-        (Subject.Science.Equals(), (a) => WriteLine($"Science: {a}"))
-      );
+      Economics.Switch(t => t.Tag)
+        .Case(Subject.Mathematics, t => WriteLine($"Mathematics: {t}"))
+        .Case(Subject.Economics, t => WriteLine($"Economics: {t}"))
+        .Case(Subject.Science, t => WriteLine($"Science: {t}"))
+        .Else(_ => WriteLine("Default: No Match"));
 
-      var res21 = Mathematics.Match(
-        () => { WriteLine("Default: No Match"); return default; },
-        (Subject.Mathematics.Equals(), (a) => { WriteLine($"Mathematics: {a}"); return a; }
-      ),
-        (Subject.Economics.Equals(), (a) => { WriteLine($"Economics: {a}"); return a; }
-      ),
-        (Subject.Science.Equals(), (a) => { WriteLine($"Science: {a}"); return a; }
-      )
-      );
-
-      var res24 = Medicine.Match(
-        () => { WriteLine("Default: No Match"); return default; },
-        (Subject.Mathematics.Equals(), (a) => { WriteLine($"Mathematics: {a}"); return a; }
-      ),
-        (Subject.Economics.Equals(), (a) => { WriteLine($"Economics: {a}"); return a; }
-      ),
-        (Subject.Science.Equals(), (a) => { WriteLine($"Science: {a}"); return a; }
-      )
-      );
-
-      //Mathematics
-      //  .Case(Subject.Mathematics, a => WriteLine($"Mathematics: {a}"))
-      //  .Case(Subject.Economics, a => WriteLine($"Economics: {a}"))
-      //  .Default((u, a) => WriteLine($"Unknown : {u} -> {a}"))
-      //  .Run();
-
-      //var testd = When
-      //  .Its<EnumUnion<Subject, (int, int)>>(x => WriteLine(x))
-      //  .And((EnumUnion<Subject, (int, int)> x) => x.Tag.Equals(Subject.Science));
-
-
+      var res21 = Mathematics.Switch<Tagged<Subject, int>, Subject, int>(t => t.Tag)
+        .Case(Subject.Mathematics, t => { WriteLine($"Mathematics: {t.Value}"); return t.Value; })
+        .Case(Subject.Economics, t => { WriteLine($"Economics: {t.Value}"); return t.Value; })
+        .Case(Subject.Science, t => { WriteLine($"Science: {t.Value}"); return t.Value; })
+        .Else(_ => { WriteLine("Default: No Match"); return default; });
+        
       var dirdegree = Tagged(Direction.Degree, 135);
 
-      dirdegree.Match(
-        unmatched: () => WriteLine("Unmatched"),
-        (Direction.Degree.Equals(), t => WriteLine($"{t.Value}"))
-      );
+      dirdegree.Switch(t => t.Tag)
+        .Case(Direction.Degree, t => WriteLine($"{t.Value}"))
+        .Else(_ => WriteLine("Unmatched"));
 
       List(
         Tagged<Direction, int>(Direction.North),
@@ -466,14 +402,13 @@ namespace FPExamples {
         Tagged(Direction.Degree, 135)
       ).ForEach(Process);
 
-      var ip = Tagged<IpAddress, (byte, byte, byte, byte), string>(IpAddress.V4, (127, 0, 0, 1));
+      var ip = Tagged<IpAddress, IpOctet, string>(IpAddress.V4, (127, 0, 0, 1));
+      var ip2 = Tagged<IpAddress, IpOctet, string>(IpAddress.V6, "3456:4455:3445:3455");
 
-      ip.Match(
-        unmatched: () => WriteLine("Unmatched"),
-        (IpAddress.V4.Equals(), t => WriteLine($"IP V4 {t.Value1.Item1}, {t.Value1.Item2}, {t.Value1.Item3}, {t.Value1.Item4}")),
-        (IpAddress.V6.Equals(), t => WriteLine($"IP V6 {t.Value2}"))
-      );
-
+      ip2.Switch(t => t.Tag)
+        .Case(IpAddress.V4, t => WriteLine($"IP V4 {t.Value1.Item1}, {t.Value1.Item2}, {t.Value1.Item3}, {t.Value1.Item4}"))
+        .Case(IpAddress.V6, t=> WriteLine($"IP V6 {t.Value2}"))
+        .Else(_ => WriteLine("Unmatched"));
 
       var numbers2 = List(1, 2, 3, 4, 5);
       //numbers.Map(x => x + 1).DebugPrint();
@@ -493,7 +428,9 @@ namespace FPExamples {
         //  success: x => x.AsEnumerable().ForEach(y => y.DebugPrint())
         //);
 
-    
+
+
+
 
 
     var numbs = List(
@@ -506,7 +443,7 @@ namespace FPExamples {
 
       var numbs2 = List(
         List(
-          List(Value(1))
+          List(Try<int>(() => throw new ArgumentException("test error")))
         ),
         List(
           List(Value(2))
@@ -550,7 +487,71 @@ namespace FPExamples {
       numbs3.DebugPrint();
       numbs4.DebugPrint();
 
+
+
+      //Tagged<Direction, int>(Direction.North).Switch(
+      //  () => { },
+      //  Eval<Direction, int>(Direction.Degree.Equals().ToPredicate(), t => WriteLine(t.Value)),
+      //  Eval<Direction, int>(Direction.North.Equals().ToPredicate(), t => WriteLine("North"))
+      //);
+
+      var dir = Tagged<Direction, int>(Direction.Degree, 240);
+
+      dir.Switch(t => t.Tag)
+        .Case(Direction.North, _ => WriteLine("North"))
+        .Case(Direction.West, _ => WriteLine("West"))
+        .Case(t => t.Tag.HasFlag(Direction.Degree) && t.Value > 241, t => WriteLine($"Degree > 241 => {t.Value}"))
+        .Case(Direction.Degree, t => WriteLine($"Degree: {t.Value}"))
+        .Else(_ => WriteLine("Else no match"));
+
+      dir.Switch(Id)
+        .Case(t => t.Tag.HasFlag(Direction.Degree), t => WriteLine($"Degree ===> {t.Value}"))
+        .Else(_ => WriteLine("No match found!"));
+
+      var degree = dir.Switch<Tagged<Direction, int>, Direction, int>(t => t.Tag)
+        .Case(Direction.North, _ => -1)
+        .Case(Direction.West, _ => -1)
+        .Case(t => t.Tag.HasFlag(Direction.Degree) && t.Value > 240, t => t.Value)
+        .Case(Direction.Degree, t => t.Value + 20)
+        .Else(t => -1);
+
+      WriteLine($"Degree ---> {degree}");
+
+      var pers1 = new Person("Jack", "Sprat", true, Subject.Mathematics);
+
+      pers1.Switch(per => per.Name)
+        .Case("Jac", per => WriteLine(per.Subject))
+        .Case(per => per.Name.Contains("Jaq"), per => WriteLine($"{per.Name}, {per.Surname}"))
+        .Case(per => per.Surname.Contains("Sp"), per => WriteLine($"{per.Name}, {per.Surname}, {per.Subject}"))
+        .Else(_ => WriteLine("No Match to Person"));
+
+      Tagged<Option, A> Some<A>(A value) => Tagged<Option, A>(Option.Some, value);
+      Tagged<Option, A> None<A>() => Tagged<Option, A>(Option.None);
+
+      var opt1 = Some(1);
+      var opt2 = None<int>();
+
+      opt1.Map(x => x.ToString())
+          .FlatMap(x => Some(x + " number"))
+          .Switch(t => t.Tag)
+          .Case(Option.Some, t => WriteLine($"Some: {t.Value}"))
+          .Case(Option.None, t => WriteLine("None: "));
+
+
+      Tagged<Either, L, R> Left<L, R>(L value) => Tagged<Either, L, R>(Either.Left, value);
+      Tagged<Either, L, R> Right<L, R>(R value) => Tagged<Either, L, R>(Either.Right, value);
+
+      var eith1 = Left<string, int>("Error");
+      var eith2 = Right<string, int>(2);
+
+      eith2.Map(Increment)
+           .FlatMap(x => Right<string, int>(x.Item2 * x.Item2))
+           .Switch(t => t.Tag)
+           .Case(Either.Right, t => WriteLine($"Right: {t.Value2}"))
+           .Case(Either.Left, t => WriteLine($"Left: {t.Value1}"));
+
+
+
     }
   }
 }
- 

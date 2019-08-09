@@ -27,7 +27,7 @@ using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
-  public struct Yoneda<A, B> {
+  public sealed class Yoneda<A, B> {
     internal readonly object Functor;
     internal readonly Func<A, B> Transform;
     public Yoneda(object functor, Func<A, B> transform) => (Functor, Transform) = (functor, transform);

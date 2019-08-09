@@ -34,7 +34,7 @@ namespace Endofunk.FX {
     Type @Type { get; }
   }
 
-  public class Store<S, A> {
+  public sealed class Store<S, A> {
     internal readonly Reducer<S, A> Reducer;
     internal readonly List<Subscriber<S>> Subscribers = List<Subscriber<S>>();
     internal S State;
@@ -57,13 +57,13 @@ namespace Endofunk.FX {
     }
   }
 
-  public struct Reducer<S, A> {
+  public sealed class Reducer<S, A> {
     public readonly Func<S, A, S> Reduce;
     private Reducer(Func<S, A, S> reduce) => (Reduce) = (reduce);
     public static Reducer<S, A> Create(Func<S, A, S> reduce) => new Reducer<S, A>(reduce);
   }
 
-  public struct Subscriber<S> {
+  public sealed class Subscriber<S> {
     public readonly Guid Id;
     public readonly Action<S> Function;
     public bool HasCrashed { get; private set; }

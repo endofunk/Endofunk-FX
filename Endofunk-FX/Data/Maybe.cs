@@ -42,7 +42,7 @@ namespace Endofunk.FX {
   /// represented by Nothing. A richer error monad can be built using the Either, Result or Validation types.
   /// </summary>
   [DataContract]
-  public struct Maybe<A> : IEquatable<Maybe<A>> {
+  public sealed class Maybe<A> : IEquatable<Maybe<A>> {
     [DataMember]
     internal readonly A Value;
     [DataMember]
