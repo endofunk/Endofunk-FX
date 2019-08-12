@@ -81,19 +81,6 @@ namespace Endofunk.FX {
     public static Union<R> LiftA<T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> @this, Union<T1> t1, Union<T2> t2, Union<T3> t3, Union<T4> t4, Union<T5> t5, Union<T6> t6, Union<T7> t7, Union<T8> t8, Union<T9> t9) => @this.Curry().Map(t1).Apply(t2).Apply(t3).Apply(t4).Apply(t5).Apply(t6).Apply(t7).Apply(t8).Apply(t9);
     #endregion
 
-    //    #region Match
-    //    public static void Match<T1>(this Union<T1> @this, (Func<Union<T1>, bool> predicate, Action<Union<T1>> f) eval) {
-    //      if (eval.predicate(@this)) eval.f(@this);
-    //    }
-
-    //    public static R Match<T1, R>(this Union<T1> @this, Func<R> unmatched, (Func<Union<T1>, bool> predicate, Func<Union<T1>, R> f) eval) {
-    //      if (eval.predicate(@this)) {
-    //        return eval.f(@this);
-    //      }
-    //      return unmatched();
-    //    }
-    //    #endregion
-
     #region DebugPrint
     public static void DebugPrint<T1>(this Union<T1> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
@@ -155,25 +142,6 @@ namespace Endofunk.FX {
     public static Func<Union<T1, T2>, Union<R, T2>> Apply<T1, T2, R>(this Union<Func<T1, R>, T2> fn) => @this => @this.Apply(fn);
     public static Func<Union<T1, T2>, Union<T1, R>> Apply<T1, T2, R>(this Union<T1, Func<T2, R>> fn) => @this => @this.Apply(fn);
     #endregion
-
-    //    #region Match
-    //    public static void Match<T1, T2>(this Union<T1, T2> @this, Action unmatched, params (Predicate<Union<T1, T2>> predicate, Action<Union<T1, T2>> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          f(@this);
-    //          return;
-    //        }
-    //      }
-    //      unmatched();
-    //    }
-
-    //    public static R Match<T1, T2, R>(this Union<T1, T2> @this, Func<R> unmatched, params (Predicate<Union<T1, T2>> predicate, Func<Union<T1, T2>, R> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) return f(@this);
-    //      }
-    //      return unmatched();
-    //    }
-    //    #endregion
 
     #region DebugPrint
     public static void DebugPrint<T1, T2>(this Union<T1, T2> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
@@ -253,27 +221,6 @@ namespace Endofunk.FX {
     public static Func<Union<T1, T2, T3>, Union<T1, R, T3>> Apply<T1, T2, T3, R>(this Union<T1, Func<T2, R>, T3> fn) => @this => @this.Apply(fn);
     public static Func<Union<T1, T2, T3>, Union<T1, T2, R>> Apply<T1, T2, T3, R>(this Union<T1, T2, Func<T3, R>> fn) => @this => @this.Apply(fn);
     #endregion
-
-    //    #region Match
-    //    public static void Match<T1, T2, T3>(this Union<T1, T2, T3> @this, Action unmatched, params (Predicate<Union<T1, T2, T3>> predicate, Action<Union<T1, T2, T3>> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          f(@this);
-    //          return;
-    //        }
-    //      }
-    //      unmatched();
-    //    }
-
-    //    public static R Match<T1, T2, T3, R>(this Union<T1, T2, T3> @this, Func<R> unmatched, params (Predicate<Union<T1, T2, T3>> predicate, Func<Union<T1, T2, T3>, R> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          return f(@this);
-    //        }
-    //      }
-    //      return unmatched();
-    //    }
-    //    #endregion
 
     #region DebugPrint
     public static void DebugPrint<T1, T2, T3>(this Union<T1, T2, T3> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
@@ -370,27 +317,6 @@ namespace Endofunk.FX {
     public static Func<Union<T1, T2, T3, T4>, Union<T1, T2, R, T4>> Apply<T1, T2, T3, T4, R>(this Union<T1, T2, Func<T3, R>, T4> fn) => @this => @this.Apply(fn);
     public static Func<Union<T1, T2, T3, T4>, Union<T1, T2, T3, R>> Apply<T1, T2, T3, T4, R>(this Union<T1, T2, T3, Func<T4, R>> fn) => @this => @this.Apply(fn);
     #endregion
-
-    //    #region Match
-    //    public static void Match<T1, T2, T3, T4>(this Union<T1, T2, T3, T4> @this, Action unmatched, params (Predicate<Union<T1, T2, T3, T4>> predicate, Action<Union<T1, T2, T3, T4>> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          f(@this);
-    //          return;
-    //        }
-    //      }
-    //      unmatched();
-    //    }
-
-    //    public static R Match<T1, T2, T3, T4, R>(this Union<T1, T2, T3, T4> @this, Func<R> unmatched, params (Predicate<Union<T1, T2, T3, T4>> predicate, Func<Union<T1, T2, T3, T4>, R> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          return f(@this);
-    //        }
-    //      }
-    //      return unmatched();
-    //    }
-    //#endregion
 
     #region DebugPrint
     public static void DebugPrint<T1, T2, T3, T4>(this Union<T1, T2, T3, T4> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
@@ -504,27 +430,6 @@ namespace Endofunk.FX {
     public static Func<Union<T1, T2, T3, T4, T5>, Union<T1, T2, T3, R, T5>> Apply<T1, T2, T3, T4, T5, R>(this Union<T1, T2, T3, Func<T4, R>, T5> fn) => @this => @this.Apply(fn);
     public static Func<Union<T1, T2, T3, T4, T5>, Union<T1, T2, T3, T4, R>> Apply<T1, T2, T3, T4, T5, R>(this Union<T1, T2, T3, T4, Func<T5, R>> fn) => @this => @this.Apply(fn);
     #endregion
-
-    //    #region Match
-    //    public static void Match<T1, T2, T3, T4, T5>(this Union<T1, T2, T3, T4, T5> @this, Action unmatched, params (Predicate<Union<T1, T2, T3, T4, T5>> predicate, Action<Union<T1, T2, T3, T4, T5>> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          f(@this);
-    //          return;
-    //        }
-    //      }
-    //      unmatched();
-    //    }
-
-    //    public static R Match<T1, T2, T3, T4, T5, R>(this Union<T1, T2, T3, T4, T5> @this, Func<R> unmatched, params (Predicate<Union<T1, T2, T3, T4, T5>> predicate, Func<Union<T1, T2, T3, T4, T5>, R> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          return f(@this);
-    //        }
-    //      }
-    //      return unmatched();
-    //    }
-    //    #endregion
 
     #region DebugPrint
     public static void DebugPrint<T1, T2, T3, T4, T5>(this Union<T1, T2, T3, T4, T5> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
@@ -655,27 +560,6 @@ namespace Endofunk.FX {
     public static Func<Union<T1, T2, T3, T4, T5, T6>, Union<T1, T2, T3, T4, R, T6>> Apply<T1, T2, T3, T4, T5, T6, R>(this Union<T1, T2, T3, T4, Func<T5, R>, T6> fn) => @this => @this.Apply(fn);
     public static Func<Union<T1, T2, T3, T4, T5, T6>, Union<T1, T2, T3, T4, T5, R>> Apply<T1, T2, T3, T4, T5, T6, R>(this Union<T1, T2, T3, T4, T5, Func<T6, R>> fn) => @this => @this.Apply(fn);
     #endregion
-
-    //    #region Match
-    //    public static void Match<T1, T2, T3, T4, T5, T6>(this Union<T1, T2, T3, T4, T5, T6> @this, Action unmatched, params (Predicate<Union<T1, T2, T3, T4, T5, T6>> predicate, Action<Union<T1, T2, T3, T4, T5, T6>> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          f(@this);
-    //          return;
-    //        }
-    //      }
-    //      unmatched();
-    //    }
-
-    //    public static R Match<T1, T2, T3, T4, T5, T6, R>(this Union<T1, T2, T3, T4, T5, T6> @this, Func<R> unmatched, params (Predicate<Union<T1, T2, T3, T4, T5, T6>> predicate, Func<Union<T1, T2, T3, T4, T5, T6>, R> f)[] eval) {
-    //      foreach (var (predicate, f) in eval) {
-    //        if (predicate(@this)) {
-    //          return f(@this);
-    //        }
-    //      }
-    //      return unmatched();
-    //    }
-    //    #endregion
 
     #region DebugPrint
     public static void DebugPrint<T1, T2, T3, T4, T5, T6>(this Union<T1, T2, T3, T4, T5, T6> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
