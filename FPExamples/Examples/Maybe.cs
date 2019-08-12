@@ -23,8 +23,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using Endofunk.FX;
+using static Endofunk.FX.Prelude;
+
 namespace FPExamples.Examples {
   public static class Maybe_Monad {
+
+    /// The Maybe type encapsulates an optional value. A value of type Maybe either contains
+    /// a value (represented as Just), or it is empty (represented as Nothing).
+    /// 
+    /// Using Maybe is a good way to deal with errors or exceptional cases without resorting to 
+    /// drastic measures such as error.
+    
+    public class Employee {
+      public int Id { get; }
+      public string Name { get; }
+      public string Surname { get; }
+      public Employee(int id, string name, string surname) => (Id, Name, Surname) = (id, name, surname);
+    }
+
+    public static void Assignment() {
+
+      // Creating a Maybe variable using syntactic sugar
+      // State: Just
+      var just_value = Just(1);
+
+      // The above is equivalent to:
+      // State: Just
+      var just_value2 = Maybe<int>.Just(1);
+
+      // Creating a Maybe variable using syntactic sugar
+      // State: Nothing
+      var nothing_value = Nothing<int>();
+
+      // The above is equivalent to:
+      // State: Just
+      var nothing_value2 = Maybe<int>.Nothing();
+
+      // Creating a Maybe variable using syntactic sugar
+      var just_employee = Just(new Employee(1, "Jack", "Sprat"));
+
+    }
+
+    public static void Transform() {
+      var value = Just(1);
+      var result = value.Map(x => x + 1);
+
+      value = Nothing<int>();
+      result = value.Map(x => x + 1);
+    }
 
   }
 }

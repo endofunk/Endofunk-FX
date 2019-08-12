@@ -68,7 +68,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class ValidationExtensions {
+  public static class ValidationExtensions {
     #region ForEach
     public static void ForEach<L, R>(this Validation<L, R> @this, Action<R> f) => @this.AsEnumerable().ForEach(f);
     #endregion
@@ -87,6 +87,7 @@ namespace Endofunk.FX {
     #region Functor - Map (Right Affinity)
     public static Validation<L, R2> Map<L, R, R2>(this Validation<L, R> @this, Func<R, R2> fn) => @this.MapR(fn);
     public static Validation<L, R2> Map<L, R, R2>(this Func<R, R2> fn, Validation<L, R> @this) => @this.MapR(fn);
+    public static Func<Validation<L, R>, Validation<L, R2>> Map<L, R, R2>(this Func<R, R2> fn) => @this => @this.MapR(fn);
     #endregion
 
     #region Functor - Bimap, First, Second

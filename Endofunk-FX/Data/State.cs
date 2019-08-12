@@ -43,6 +43,7 @@ namespace Endofunk.FX {
       });
     }
     public static State<S, B> Map<S, A, B>(this Func<A, B> fn, State<S, A> @this) => @this.Map(fn);
+    public static Func<State<S, A>, State<S, B>> Map<S, A, B>(this Func<A, B> fn) => @this => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -53,6 +54,7 @@ namespace Endofunk.FX {
       });
     }
     public static State<S, B> FlatMap<S, A, B>(this Func<A, State<S, B>> fn, State<S, A> @this) => @this.FlatMap(fn);
+    public static Func<State<S, A>, State<S, B>> FlatMap<S, A, B>(this Func<A, State<S, B>> fn) => @this => @this.FlatMap(fn);
     public static State<S, B> Bind<S, A, B>(this State<S, A> @this, Func<A, State<S, B>> fn) => @this.FlatMap(fn);
     #endregion
 
@@ -72,6 +74,7 @@ namespace Endofunk.FX {
     #region Applicative Functor
     public static State<S, R> Apply<S, A, R>(this State<S, A> @this, State<S, Func<A, R>> fn) => fn.FlatMap(g => @this.Map(x => g(x)));
     public static State<S, R> Apply<S, A, R>(this State<S, Func<A, R>> fn, State<S, A> @this) => @this.Apply(fn);
+    public static Func<State<S, A>, State<S, R>> Apply<S, A, R>(this State<S, Func<A, R>> fn) => @this => @this.Apply(fn);
     #endregion
 
     #region Applicative Functor - Lift a function & actions

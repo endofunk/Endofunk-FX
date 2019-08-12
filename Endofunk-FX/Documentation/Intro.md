@@ -16,7 +16,7 @@ Functional Programming (FP) has for decades been a darling only within computer 
 
 The term Functional Programming was first mentioned in P.J Landin's  "The Next 700 Programming Languages" published in 1965.
 
-> The word "denotative" seems more appropriate than nonproeedural, declarative or functional. The antithesis of denotative is "imperative." Effectively "denotative" means "can be mapped into ISWM without using jumping or assignment," given appropriate primitives. 
+> The word "denotative" seems more appropriate than nonprocedural, declarative or functional. The antithesis of denotative is "imperative." Effectively "denotative" means "can be mapped into ISWM without using jumping or assignment," given appropriate primitives. 
 >
 > It follows that `functional programming` has little to do with functional notation. It is a trivial and pointless task to rearrange some piece of symbolism into prefixed operators and heavy bracketing. It is an intellectually demanding activity to characterize some physical or logical system as a set of entities and functional relations among them. 
 
@@ -32,6 +32,14 @@ Obviously FP with its strong tie to mathematics is ultimately a collaboration of
 - Haskell Curry; work on [combinatory logic](https://en.wikipedia.org/wiki/Combinatory_logic).
 - Alonzo Church; known for the invention of [lambda calculus](https://en.wikipedia.org/wiki/Lambda_calculus).
 - [Samuel Eilenberg](https://en.wikipedia.org/wiki/Samuel_Eilenberg) and [Saunders Mac Lane](https://en.wikipedia.org/wiki/Saunders_Mac_Lane); known for the invention of [category theory](https://en.wikipedia.org/wiki/Category_theory).
+
+
+
+## Why Functional Programming Matters
+
+Imperative programming takes an initial global state, applying a sequence of mutations to this global state to achieve the desired state. 
+
+Whereas Object Oriented programming focuses on encapsulating instances of the global state in classes 
 
 
 

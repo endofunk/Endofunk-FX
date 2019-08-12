@@ -74,6 +74,7 @@ namespace Endofunk.FX {
     #region Applicative Functor
     public static IO<R> Apply<A, R>(this IO<A> @this, IO<Func<A, R>> fn) => fn.FlatMap(g => @this.Map(x => g(x)));
     public static IO<R> Apply<A, R>(this IO<Func<A, R>> fn, IO<A> @this) => @this.Apply(fn);
+    public static Func<IO<A>, IO<R>> Apply<A, R>(this IO<Func<A, R>> fn) => @this => @this.Apply(fn);
     #endregion
 
     #region Applicative Functor - Lift a function & actions

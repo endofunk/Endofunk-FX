@@ -33,8 +33,9 @@ namespace Endofunk.FX {
   /// <summary>
   /// The Maybe type with associated operations.
   /// 
-  /// The Maybe type encapsulates an optional value. A value of type Maybe a either contains
-  /// a value of type a (represented as Just), or it is empty (represented as Nothing). 
+  /// The Maybe type encapsulates an optional value. A value of type Maybe either contains
+  /// a value (represented as Just), or it is empty (represented as Nothing).
+  /// 
   /// Using Maybe is a good way to deal with errors or exceptional cases without resorting to 
   /// drastic measures such as error.
   /// 
@@ -118,7 +119,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class MaybeExtensions {
+  public static class MaybeExtensions {
     #region ForEach
     public static void ForEach<A>(this Maybe<A> @this, Action<A> f) => @this.AsEnumerable().ForEach(f);
     #endregion
@@ -136,6 +137,7 @@ namespace Endofunk.FX {
     #region Functor
     public static Maybe<U> Map<T, U>(this Maybe<T> @this, Func<T, U> fn) => @this.Fold(Maybe<U>.Nothing(), (a, e) => @this.IsJust ? Maybe<U>.Just(fn(e)) : a);
     public static Maybe<R> Map<A, R>(this Func<A, R> fn, Maybe<A> @this) => @this.Map(fn);
+    public static Func<Maybe<A>, Maybe<R>> Map<A, R>(this Func<A, R> fn) => @this => @this.Map(fn);
     #endregion
 
     #region Monad

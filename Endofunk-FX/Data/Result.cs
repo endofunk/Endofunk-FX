@@ -105,6 +105,7 @@ namespace Endofunk.FX {
     #region Functor
     public static Result<R> Map<A, R>(this Func<A, R> fn, Result<A> @this) => @this.Map(fn);
     public static Result<R> Map<A, R>(this Result<A> @this, Func<A, R> fn) => @this.HasValue ? Value(fn(@this.SuccessValue)) : Error<R>(@this.ErrorValue);
+    public static Func<Result<A>, Result<R>> Map<A, R>(this Func<A, R> fn) => @this => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -173,13 +174,14 @@ namespace Endofunk.FX {
     #endregion
 
     #region Sequence
-    public static IEnumerable<Result<A>> Sequence<A>(Result<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
-    public static Maybe<Result<A>> Sequence<A>(Result<Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
-    public static Identity<Result<A>> Sequence<A>(Result<Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
-    public static IO<Result<A>> Sequence<A>(Result<IO<A>> @this) => @this.Traverse(Id<IO<A>>());
-    public static Reader<R, Result<A>> Sequence<R, A>(Result<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
-    public static Either<L, Result<A>> Sequence<L, A>(Result<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
-    public static Validation<L, Result<A>> Sequence<L, A>(Result<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
+    public static IEnumerable<Result<A>> Sequence<A>(this Result<IEnumerable<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static IEnumerable<Result<A>> Sequence<A>(this Result<List<A>> @this) => @this.Traverse(Id<IEnumerable<A>>());
+    public static Maybe<Result<A>> Sequence<A>(this Result<Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
+    public static Identity<Result<A>> Sequence<A>(this Result<Identity<A>> @this) => @this.Traverse(Id<Identity<A>>());
+    public static IO<Result<A>> Sequence<A>(this Result<IO<A>> @this) => @this.Traverse(Id<IO<A>>());
+    public static Reader<R, Result<A>> Sequence<R, A>(this Result<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
+    public static Either<L, Result<A>> Sequence<L, A>(this Result<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
+    public static Validation<L, Result<A>> Sequence<L, A>(this Result<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
     #endregion 
 
     #region Match

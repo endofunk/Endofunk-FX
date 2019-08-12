@@ -56,7 +56,7 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class IdentityExtensions {
+  public static class IdentityExtensions {
     #region ForEach
     public static void ForEach<A>(this Identity<A> @this, Action<A> f) => @this.AsEnumerable().ForEach(f);
     #endregion

@@ -525,32 +525,49 @@ namespace FPExamples {
         .Case(per => per.Surname.Contains("Sp"), per => WriteLine($"{per.Name}, {per.Surname}, {per.Subject}"))
         .Else(_ => WriteLine("No Match to Person"));
 
-      Tagged<Option, A> Some<A>(A value) => Tagged<Option, A>(Option.Some, value);
-      Tagged<Option, A> None<A>() => Tagged<Option, A>(Option.None);
+      //Tagged<Option, A> Some<A>(A value) => Tagged<Option, A>(Option.Some, value);
+      //Tagged<Option, A> None<A>() => Tagged<Option, A>(Option.None);
 
-      var opt1 = Some(1);
-      var opt2 = None<int>();
+      //var opt1 = Some(1);
+      //var opt2 = None<int>();
 
-      opt1.Map(x => x.ToString())
-          .FlatMap(x => Some(x + " number"))
-          .Switch(t => t.Tag)
-          .Case(Option.Some, t => WriteLine($"Some: {t.Value}"))
-          .Case(Option.None, t => WriteLine("None: "));
-
-
-      Tagged<Either, L, R> Left<L, R>(L value) => Tagged<Either, L, R>(Either.Left, value);
-      Tagged<Either, L, R> Right<L, R>(R value) => Tagged<Either, L, R>(Either.Right, value);
-
-      var eith1 = Left<string, int>("Error");
-      var eith2 = Right<string, int>(2);
-
-      eith2.Map(Increment)
-           .FlatMap(x => Right<string, int>(x.Item2 * x.Item2))
-           .Switch(t => t.Tag)
-           .Case(Either.Right, t => WriteLine($"Right: {t.Value2}"))
-           .Case(Either.Left, t => WriteLine($"Left: {t.Value1}"));
+      //opt1.Map(x => x.ToString())
+      //    .FlatMap(x => Some(x + " number"))
+      //    .Switch(t => t.Tag)
+      //    .Case(Option.Some, t => WriteLine($"Some: {t.Value}"))
+      //    .Case(Option.None, t => WriteLine("None: "));
 
 
+      //Tagged<Either, L, R> Left<L, R>(L value) => Tagged<Either, L, R>(Either.Left, value);
+      //Tagged<Either, L, R> Right<L, R>(R value) => Tagged<Either, L, R>(Either.Right, value);
+
+      //var eith1 = Left<string, int>("Error");
+      //var eith2 = Right<string, int>(2);
+
+      //eith2.Map(Increment)
+      //     .FlatMap(x => Right<string, int>(x.Item2 * x.Item2))
+      //     .Switch(t => t.Tag)
+      //     .Case(Either.Right, t => WriteLine($"Right: {t.Value2}"))
+      //     .Case(Either.Left, t => WriteLine($"Left: {t.Value1}"));
+
+
+      var trav1 = Just(List(1, 2, 3, 4, 5, 6));
+      var TraveRes = trav1.Traverse(Id);
+      var trav1res = trav1.Traverse(x => x.FlatMap(y => (y % 2 == 0) ? List(y) : List<int>())).ToList();
+      trav1res.DebugPrint();
+
+
+      Union<Subject, string> TestUnion(int v) { 
+        if (v > 1) { return Subject.Economics; }
+        return "LessThanEq 1";
+      }
+
+      var unires = TestUnion(2);
+
+      unires
+        .Switch(u => u.Index)
+        .Case(1, u => WriteLine($"value1: { u.Value1 }"))
+        .Case(2, u => WriteLine($"value2: { u.Value2 }"));
 
     }
   }

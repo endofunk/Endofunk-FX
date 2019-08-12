@@ -60,10 +60,11 @@ namespace Endofunk.FX {
   }
   #endregion
 
-  public static partial class ReaderExtensions {
+  public static class ReaderExtensions {
     #region Functor
     public static Reader<Env, B> Map<Env, A, B>(this Reader<Env, A> @this, Func<A, B> f) => Reader<Env, B>.Of(@this.RunReader.Compose(f));
-    public static Reader<Env, B> Map<Env, A, B>(this Func<A, B> f, Reader<Env, A> @this) => Reader<Env, B>.Of(@this.RunReader.Compose(f));
+    public static Reader<Env, B> Map<Env, A, B>(this Func<A, B> f, Reader<Env, A> @this) => @this.Map(f);
+    public static Func<Reader<Env, A>, Reader<Env, B>> Map<Env, A, B>(this Func<A, B> f) => @this => @this.Map(f);
     #endregion
 
     #region Monad
@@ -90,7 +91,8 @@ namespace Endofunk.FX {
 
     #region Applicative Functor
     public static Reader<Env, B> Apply<Env, A, B>(this Reader<Env, A> @this, Reader<Env, Func<A, B>> f) => f.FlatMap(g => @this.Map(g));
-    public static Reader<Env, B> Apply<Env, A, B>(this Reader<Env, Func<A, B>> f, Reader<Env, A> @this) => f.FlatMap(g => @this.Map(g));
+    public static Reader<Env, B> Apply<Env, A, B>(this Reader<Env, Func<A, B>> f, Reader<Env, A> @this) => @this.Apply(f);
+    public static Func<Reader<Env, A>, Reader<Env, B>> Apply<Env, A, B>(this Reader<Env, Func<A, B>> f) => @this => @this.Apply(f);
     #endregion
 
     #region Applicative Functor - Lift a function & actions

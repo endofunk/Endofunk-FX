@@ -39,7 +39,9 @@ namespace Endofunk.FX {
     #endregion
 
     #region With / Then / Select
-    public static A With<A>(this A a, Action<A> f) { f(a); return a; }
+    public static A With<A>(this A a, Action<A> f) {
+      f(a); return a;
+    }
     public static B Then<A, B>(this A @this, Func<A, B> f) => @this == null ? default : f(@this);
     public static void Then<A>(this A @this, Action<A> f) { if (@this != null) f(@this); }
     #endregion

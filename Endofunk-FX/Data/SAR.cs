@@ -29,10 +29,10 @@ using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
 
-  public interface IAction {
-    object Value { get; }
-    Type @Type { get; }
-  }
+  //public interface IAction {
+  //  object Value { get; }
+  //  Type @Type { get; }
+  //}
 
   public sealed class Store<S, A> {
     internal readonly Reducer<S, A> Reducer;
