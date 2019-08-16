@@ -22,9 +22,6 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX {
   public static partial class Prelude {

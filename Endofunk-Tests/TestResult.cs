@@ -40,7 +40,7 @@ namespace Endofunk.Tests {
 
     [Test]
     public void Applicative1stCompositionLaw() {
-      var r = Value(Increment).Apply(Value(Square).Apply(Value(2)));
+      var r = Value(Square).Apply(Value(Increment).Apply(Value(2)));
       var l = Compose<int, int, int>()
         .Map(Value(Increment))
         .Apply(Value(Square))
@@ -50,8 +50,8 @@ namespace Endofunk.Tests {
 
     [Test]
     public void Applicative2ndCompositionLaw() {
-      var r = Value(Increment)
-        .Apply(Value(Square)
+      var r = Value(Square)
+        .Apply(Value(Increment)
         .Apply(Value(2)));
       var l = Value(Compose<int, int, int>())
         .Apply(Value(Increment))

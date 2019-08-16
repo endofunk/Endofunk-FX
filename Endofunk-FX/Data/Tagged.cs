@@ -28,14 +28,18 @@ using System.Runtime.Serialization;
 namespace Endofunk.FX {
 
   #region Tagged 1
-  [DataContract] public sealed class Tagged<E, T1> where E : Enum {
+  [DataContract] public sealed class Tagged<E, T1> : IEquatable<Tagged<E, T1>> where E : Enum {
     [DataMember] public readonly E Tag;
     [DataMember] public readonly bool HasValue;
     [DataMember] private readonly T1 UnionValue;
     private Tagged() { }
-    internal Tagged(E tag, bool hasvalue, T1 unionvalue) => (Tag, HasValue, UnionValue) = (tag, hasvalue, unionvalue);
+    public Tagged(E tag, bool hasvalue, T1 unionvalue) => (Tag, HasValue, UnionValue) = (tag, hasvalue, unionvalue);
     public T1 Value => HasValue ? UnionValue : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.");
     public override string ToString() => $"{this.GetType().Simplify()}[{(HasValue ? Value.ToString() : "")}]";
+
+    public bool Equals(Tagged<E, T1> other) {
+      return Tag.Equals(other.Tag) && HasValue.Equals(other.HasValue) && UnionValue.Equals(other.UnionValue);
+    }
   }
   #endregion
 

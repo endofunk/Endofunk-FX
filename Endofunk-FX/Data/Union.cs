@@ -22,13 +22,14 @@
 // THE SOFTWARE.
 
 using System;
+using System.Runtime.Serialization;
 
 namespace Endofunk.FX {
 
   #region Union 1
-  public sealed class Union<T1> {
-    public readonly bool HasValue;
-    private readonly T1 UnionValue;
+  [DataContract] public sealed class Union<T1> {
+    [DataMember] public readonly bool HasValue;
+    [DataMember] private readonly T1 UnionValue;
     private Union() { }
     internal Union(bool hasvalue, T1 unionvalue) => (HasValue, UnionValue) = (hasvalue, unionvalue);
     public T1 Value => HasValue ? UnionValue : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, Nothing embedded.");
@@ -98,12 +99,12 @@ namespace Endofunk.FX {
   #endregion
 
   #region Union 2
-  public sealed class Union<T1, T2> {
-    public readonly int Index;
+  [DataContract] public sealed class Union<T1, T2> {
+    [DataMember] public readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
     private Union() { }
     internal Union(int index, T1 unionvalue1, T2 unionvalue2) => (Index, UnionValue1, UnionValue2) = (index, unionvalue1, unionvalue2);
     public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
@@ -163,14 +164,14 @@ namespace Endofunk.FX {
   #endregion
 
   #region Union 3
-  public sealed class Union<T1, T2, T3> {
-    public readonly int Index;
+  [DataContract] public sealed class Union<T1, T2, T3> {
+    [DataMember] public readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
     private Union() { }
     internal Union(int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3) => (Index, UnionValue1, UnionValue2, UnionValue3) = (index, unionvalue1, unionvalue2, unionvalue3);
     public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
@@ -245,16 +246,16 @@ namespace Endofunk.FX {
   #endregion
 
   #region Union 4
-  public sealed class Union<T1, T2, T3, T4> {
-    public readonly int Index;
+  [DataContract] public sealed class Union<T1, T2, T3, T4> {
+    [DataMember] public readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
     private Union() { }
     internal Union(int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4) => (Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4) = (index, unionvalue1, unionvalue2, unionvalue3, unionvalue4);
     public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
@@ -344,18 +345,18 @@ namespace Endofunk.FX {
   #endregion
 
   #region Union 5
-  public sealed class Union<T1, T2, T3, T4, T5> {
-    public readonly int Index;
+  [DataContract] public sealed class Union<T1, T2, T3, T4, T5> {
+    [DataMember] public readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
-    private readonly T5 UnionValue5;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
+    [DataMember] private readonly T5 UnionValue5;
     private Union() { }
     internal Union(int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5) => (Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5) = (index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5);
     public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");
@@ -460,20 +461,20 @@ namespace Endofunk.FX {
   #endregion
 
   #region Union 6
-  public sealed class Union<T1, T2, T3, T4, T5, T6> {
-    public readonly int Index;
+  [DataContract] public sealed class Union<T1, T2, T3, T4, T5, T6> {
+    [DataMember] public readonly int Index;
     public bool HasValue1 => Index == 1;
     public bool HasValue2 => Index == 2;
     public bool HasValue3 => Index == 3;
     public bool HasValue4 => Index == 4;
     public bool HasValue5 => Index == 5;
     public bool HasValue6 => Index == 6;
-    private readonly T1 UnionValue1;
-    private readonly T2 UnionValue2;
-    private readonly T3 UnionValue3;
-    private readonly T4 UnionValue4;
-    private readonly T5 UnionValue5;
-    private readonly T6 UnionValue6;
+    [DataMember] private readonly T1 UnionValue1;
+    [DataMember] private readonly T2 UnionValue2;
+    [DataMember] private readonly T3 UnionValue3;
+    [DataMember] private readonly T4 UnionValue4;
+    [DataMember] private readonly T5 UnionValue5;
+    [DataMember] private readonly T6 UnionValue6;
     private Union() { }
     internal Union(int index, T1 unionvalue1, T2 unionvalue2, T3 unionvalue3, T4 unionvalue4, T5 unionvalue5, T6 unionvalue6) => (Index, UnionValue1, UnionValue2, UnionValue3, UnionValue4, UnionValue5, UnionValue6) = (index, unionvalue1, unionvalue2, unionvalue3, unionvalue4, unionvalue5, unionvalue6);
     public T1 Value1 => HasValue1 ? UnionValue1 : throw new InvalidOperationException($"Can't return {typeof(T1).Simplify()}, " + (Index == 0 ? "Nothing" : $"T{Index}") + " embedded.");

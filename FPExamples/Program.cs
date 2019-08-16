@@ -550,13 +550,6 @@ namespace FPExamples {
       //     .Case(Either.Right, t => WriteLine($"Right: {t.Value2}"))
       //     .Case(Either.Left, t => WriteLine($"Left: {t.Value1}"));
 
-
-      var trav1 = Just(List(1, 2, 3, 4, 5, 6));
-      var TraveRes = trav1.Traverse(Id);
-      var trav1res = trav1.Traverse(x => x.FlatMap(y => (y % 2 == 0) ? List(y) : List<int>())).ToList();
-      trav1res.DebugPrint();
-
-
       Union<Subject, string> TestUnion(int v) { 
         if (v > 1) { return Subject.Economics; }
         return "LessThanEq 1";
@@ -568,6 +561,37 @@ namespace FPExamples {
         .Switch(u => u.Index)
         .Case(1, u => WriteLine($"value1: { u.Value1 }"))
         .Case(2, u => WriteLine($"value2: { u.Value2 }"));
+
+      var opt1 = Option<int>
+        .Some(new Lazy<int>(() => 2))
+        .Map(x => {
+          WriteLine("Increment");
+          return x + 1;
+        })
+        .Map(x => {
+          WriteLine("Square");
+          return x * x;
+        });
+
+      //_ = opt1.Value;
+
+
+      //var mayb1 = Just(1).Lazy().Map(x => {
+      //  Console.WriteLine("LazyMap");
+      //  return x + 1;
+      //}).Map(x => x * x);
+
+      var mayb2 = Maybe<int>.Just(1).Map(x => x + 1);
+
+      Func<int, int> incr2() => x => x + 2;
+      
+      Func<int, Maybe<int>> incr2m() => x => Maybe<int>.Just(x + 2);
+      
+      var mayb2b = incr2().Map(mayb2).FlatMap(x => incr2m()(x));
+
+      Console.WriteLine($"{mayb2b}");
+
+
 
     }
   }

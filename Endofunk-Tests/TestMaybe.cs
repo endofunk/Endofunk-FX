@@ -37,7 +37,7 @@ namespace Endofunk.Tests {
     [Test] public void ApplicativeInterchangeLaw() => Assert.AreEqual(Just(Increment).Apply(Just(2)), Just(HOF).Apply(Increment));
   
     [Test] public void Applicative1stCompositionLaw() {
-      var r = Just(Increment).Apply(Just(Square).Apply(Just(2)));
+      var r = Just(Square).Apply(Just(Increment).Apply(Just(2)));
       var l = Compose<int, int, int>()
         .Map(Just(Increment))
         .Apply(Just(Square))
@@ -46,9 +46,7 @@ namespace Endofunk.Tests {
     }
 
     [Test] public void Applicative2ndCompositionLaw() {
-      var r = Just(Increment)
-        .Apply(Just(Square)
-        .Apply(Just(2)));
+      var r = Just(Square).Apply(Just(Increment).Apply(Just(2)));
       var l = Just(Compose<int, int, int>())
         .Apply(Just(Increment))
         .Apply(Just(Square))

@@ -40,8 +40,8 @@ namespace Endofunk.Tests {
 
     [Test]
     public void Applicative1stCompositionLaw() {
-      var r = Success<string, Func<int, int>>(Increment)
-        .Apply(Success<string, Func<int, int>>(Square)
+      var r = Success<string, Func<int, int>>(Square)
+        .Apply(Success<string, Func<int, int>>(Increment)
         .Apply(Success<string, int>(2)));
       var l = Compose<int, int, int>()
         .Map(Success<string, Func<int, int>>(Increment))
@@ -52,8 +52,8 @@ namespace Endofunk.Tests {
 
     [Test]
     public void Applicative2ndCompositionLaw() {
-      var r = Success<string, Func<int, int>>(Increment)
-        .Apply(Success<string, Func<int, int>>(Square)
+      var r = Success<string, Func<int, int>>(Square)
+        .Apply(Success<string, Func<int, int>>(Increment)
         .Apply(Success<string, int>(2)));
       var l = Success<string, Func<Func<int, int>, Func<Func<int, int>, Func<int, int>>>>(Compose<int, int, int>())
         .Apply(Success<string, Func<int, int>>(Increment))

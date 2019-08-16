@@ -42,16 +42,13 @@ namespace Endofunk.FX {
   /// The Maybe type is also a monad. It is a simple kind of error monad, where all errors are 
   /// represented by Nothing. A richer error monad can be built using the Either, Result or Validation types.
   /// </summary>
-  [DataContract]
-  public sealed class Maybe<A> : IEquatable<Maybe<A>> {
-    [DataMember]
-    internal readonly A Value;
-    [DataMember]
-    public readonly bool IsJust;
+  [DataContract] public sealed class Maybe<A> : IEquatable<Maybe<A>> {
+    [DataMember] internal readonly A Value;
+    [DataMember] public readonly bool IsJust;
     public bool IsNothing => !IsJust;
     private Maybe(A value, bool isJust = true) => (IsJust, Value) = (isJust == false || value == null) ? (false, default) : (true, value);
     public static implicit operator Maybe<A>(A value) => value == null ? Nothing<A>() : Just(value);
-    public static Maybe<A> Just(A value) => new Maybe<A>(value);
+    public static Maybe<A> Just(A value) => value == null ? Nothing<A>() : new Maybe<A>(value);
     public static Maybe<A> Nothing() => new Maybe<A>(default, false);
     public override string ToString() => $"{this.GetType().Simplify()}[{(IsJust ? "Just" : "Nothing")}{(IsNothing ? "" : ": " + this.Fold(s => s.ToString(), () => ""))}]";
 
@@ -123,7 +120,7 @@ namespace Endofunk.FX {
     #region ForEach
     public static void ForEach<A>(this Maybe<A> @this, Action<A> f) => @this.AsEnumerable().ForEach(f);
     #endregion
-    
+
     #region Fold
     public static U Fold<T, U>(this Maybe<T> ts, U identity, Func<U, T, U> fn) {
       var accumulator = identity;
@@ -251,7 +248,7 @@ namespace Endofunk.FX {
 
   public static partial class Prelude {
     #region Syntactic Sugar - Just / Nothing
-    public static Maybe<A> Just<A>(A value) => Maybe<A>.Just(value);
+    public static Maybe<A> Just<A>(A value) => (value == null) ? Maybe<A>.Nothing() : Maybe<A>.Just(value);
     public static Func<A, Maybe<A>> Just<A>() => a => Just(a);
     public static Maybe<A> Nothing<A>() => Maybe<A>.Nothing();
     #endregion
