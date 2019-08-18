@@ -562,20 +562,6 @@ namespace FPExamples {
         .Case(1, u => WriteLine($"value1: { u.Value1 }"))
         .Case(2, u => WriteLine($"value2: { u.Value2 }"));
 
-      var opt1 = Option<int>
-        .Some(new Lazy<int>(() => 2))
-        .Map(x => {
-          WriteLine("Increment");
-          return x + 1;
-        })
-        .Map(x => {
-          WriteLine("Square");
-          return x * x;
-        });
-
-      //_ = opt1.Value;
-
-
       //var mayb1 = Just(1).Lazy().Map(x => {
       //  Console.WriteLine("LazyMap");
       //  return x + 1;
@@ -591,7 +577,12 @@ namespace FPExamples {
 
       Console.WriteLine($"{mayb2b}");
 
-
+      var reduction = Reducer<Person, Tagged<Direction, int, string>>.Create((per, t) => {
+        return t.Switch<Tagged<Direction, int, string>, Direction, Person>(x => x.Tag)
+         .Case(Direction.South, tg => {
+           return per;
+         }).Else(_ => { return per; });
+      });
 
     }
   }

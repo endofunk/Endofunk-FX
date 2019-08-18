@@ -15,6 +15,7 @@ Data Types:
 - IO
 - State
 - Tagged
+- Union
 - Coyoneda
 - Yoneda
 - Continuation
@@ -31,7 +32,7 @@ Prelude (Standard Library)
     <RootNamespace>Endofunk.FX</RootNamespace>
     <AssemblyName>Endofunk.FX</AssemblyName>
     <PackageId>Endofunk.FX</PackageId>
-    <PackageVersion>0.3.2</PackageVersion>
+    <PackageVersion>0.3.3.2</PackageVersion>
     <Authors>endofunk</Authors>
     <Copyright>Copyright (c) endofunk</Copyright>
     <Owners>endofunk</Owners>
@@ -39,24 +40,13 @@ Prelude (Standard Library)
     <PackageIconUrl>https://raw.githubusercontent.com/endofunk/Endofunk-FX/master/Endofunk-FX/images/endofunk.png</PackageIconUrl>
     <PackageProjectUrl>https://endofunk.github.io/Endofunk-FX/</PackageProjectUrl>
     <PackageReleaseNotes>Added:
-- Continuation Monad
-- Pattern Matching
+- SAR (State, Action, Reducer) : Fold methods : void and generic return value
 
-Reorganisation:
--  All types and combinators
-
-Bug Fix:
-- Fixed implementation problem with Tagged type related to Functor, Monad and Applicative algebras
-- Removed previous confusing pattern matching and replaced with generic pattern matching
-
-Documentation:
-- Work in progress
-
-Usage examples for each type:
-- Work in progress</PackageReleaseNotes>
+Changed:
+- SAR (State, Action, Reducer) : Hide internal properties</PackageReleaseNotes>
     <PackageTags>C#, Functional, Functional Programming, Functor, Monad, Applicative Functor, Traverse, Sequence, Identity, Maybe, Result, Either, Validation, Reader, Writer, Tagged Union, Coyoneda, Yoneda, IEnumerable, Lambda, Tuple, Functions, Pure, Pointfree</PackageTags>
     <Summary>A core library of functional data types, extension methods, Linq conformance and more.</Summary>
-    <ReleaseVersion>0.3.2</ReleaseVersion>
+    <ReleaseVersion>0.3.3</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
