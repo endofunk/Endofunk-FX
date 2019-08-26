@@ -584,6 +584,11 @@ namespace FPExamples {
          }).Else(_ => { return per; });
       });
 
+      var uni1 = Unit();
+      var uni2 = Unit();
+
+      Console.WriteLine(uni1.CompareTo(uni2));
+
     }
   }
 }

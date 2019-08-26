@@ -225,6 +225,7 @@ namespace Endofunk.FX {
     public static Result<A> Value<A>(A value) => Result<A>.Value(value);
     public static Func<A, Result<A>> Value<A>() => a => Value<A>(a);
     public static Result<A> Error<A>(ExceptionDispatchInfo error) => Result<A>.Error(error);
+    public static Result<A> Error<A>(string reason = "Initial Error State") => Result<A>.Error(ExceptionDispatchInfo.Capture(new ArgumentException(reason)));
     public static Func<ExceptionDispatchInfo, Result<A>> Error<A>() => e => Error<A>(e);
     public static Result<A> Try<A>(Func<A> f) => Result<A>.Try(f);
     public static Func<Func<A>, Result<A>> Try<A>() => f => Try<A>(f);

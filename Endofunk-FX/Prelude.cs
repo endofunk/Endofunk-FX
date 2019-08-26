@@ -33,9 +33,15 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 
 namespace Endofunk.FX {
-  public enum Unit { } // functional void
+  /// <summary>
+  /// Functional Void
+  /// </summary>
+  public enum Unit { }
 
   public static partial class Prelude {
+    #region Syntactic sugar for Unit
+    public static Unit Unit() => new Unit();
+    #endregion
 
     #region Stream
     public static string ReadToEndOfStream(this Stream stream) => new StreamReader(stream).ReadToEnd();
