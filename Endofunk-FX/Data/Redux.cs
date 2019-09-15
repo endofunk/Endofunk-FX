@@ -1,4 +1,4 @@
-﻿// SAR.cs
+﻿// Redux.cs
 //
 // MIT License
 // Copyright (c) 2019 endofunk
@@ -32,7 +32,7 @@ namespace Endofunk.FX {
     private readonly Reducer<S, A> Reducer;
     private readonly List<Subscriber<S>> Subscribers = List<Subscriber<S>>();
     private S State;
-    private Store(Reducer<S, A> reducer, S state) => (Reducer, State) = (reducer, state);
+    internal Store(Reducer<S, A> reducer, S state) => (Reducer, State) = (reducer, state);
     public static Store<S, A> Create(Reducer<S, A> reducer, S state) => new Store<S, A>(reducer, state);
 
     public Subscriber<S> Subscribe(Action<S> action) {
@@ -60,9 +60,14 @@ namespace Endofunk.FX {
     public R Fold<R>(Func<S, R> f) => f(State);
   }
 
+  public sealed class Middleware<S, N, A> {
+    public readonly Func<S, N, A, S> Reduce;
+    internal Middleware(Func<S, N, A, S> reduce) => Reduce = reduce;
+  }
+
   public sealed class Reducer<S, A> {
     public readonly Func<S, A, S> Reduce;
-    private Reducer(Func<S, A, S> reduce) => (Reduce) = (reduce);
+    internal Reducer(Func<S, A, S> reduce) => (Reduce) = (reduce);
     public static Reducer<S, A> Create(Func<S, A, S> reduce) => new Reducer<S, A>(reduce);
   }
 
@@ -70,7 +75,7 @@ namespace Endofunk.FX {
     public readonly Guid Id;
     public readonly Action<S> Compute;
     internal bool HasCrashed { get; private set; }
-    private Subscriber(Action<S> compute) => (Id, Compute, HasCrashed) = (Guid.NewGuid(), compute, false);
+    internal Subscriber(Action<S> compute) => (Id, Compute, HasCrashed) = (Guid.NewGuid(), compute, false);
     public static Subscriber<S> Create(Action<S> compute) => new Subscriber<S>(compute);
 
     public void Update(S state) {
@@ -83,4 +88,29 @@ namespace Endofunk.FX {
       }
     }
   }
+
+  public static class ReducerExtensions {
+    public static Reducer<S, A> Compose<S, A>(this Reducer<S, A> f, Reducer<S, A> g) => new Reducer<S, A>((s, a) => g.Reduce(f.Reduce(s, a), a));
+
+    /*
+    func mapping <A, B, C> (f: A -> B) -> (((C, B) -> C) -> ((C, A) -> C)) {
+      return { reducer in
+        return { accum, a in 
+          return reducer(accum, f(a))
+        }
+      }
+    }
+    */
+
+    //public static Reducer<S, A> Map<S, A, B>(this Reducer<S, A> reducer, Func<A, B> f) => reducer.Reduce((s, a) => reducer(s, f(a)));
+  }
+
+  public static partial class Prelude {
+    public static Store<S, A> Store<S, A>(Reducer<S, A> reducer, S state) => new Store<S, A>(reducer, state);
+    public static Reducer<S, A> Reducer<S, A>(Func<S, A, S> reduce) => new Reducer<S, A>(reduce);
+    public static Middleware<S, N, A> Middleware<S, N, A>(Func<S, N, A, S> reduce) => new Middleware<S, N, A>(reduce);
+    public static Subscriber<S> Subscriber<S>(Action<S> compute) => new Subscriber<S>(compute);
+  }
 }
+
+

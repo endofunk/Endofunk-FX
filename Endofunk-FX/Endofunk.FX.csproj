@@ -43,7 +43,6 @@ Prelude (Standard Library)
 - Syntactic sugar for Result; initialise an instance with a default Error state of ArgumentException("Initial Error State") e.g. Error&lt;A&gt;()</PackageReleaseNotes>
     <PackageTags>C#, Functional, Functional Programming, Functor, Monad, Applicative Functor, Traverse, Sequence, Identity, Maybe, Result, Either, Validation, Reader, Writer, Tagged Union, Coyoneda, Yoneda, IEnumerable, Lambda, Tuple, Functions, Pure, Pointfree</PackageTags>
     <Summary>A core library of functional data types, extension methods, Linq conformance and more.</Summary>
-    <ReleaseVersion>0.3.3</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
