@@ -577,7 +577,7 @@ namespace FPExamples {
 
       Console.WriteLine($"{mayb2b}");
 
-      var reduction = Reducer<Person, Tagged<Direction, int, string>>.Create((per, t) => {
+      var reduction = Reducer<Person, Tagged<Direction, int, string>>((per, t) => {
         return t.Switch<Tagged<Direction, int, string>, Direction, Person>(x => x.Tag)
          .Case(Direction.South, tg => {
            return per;

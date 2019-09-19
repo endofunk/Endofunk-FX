@@ -22,21 +22,22 @@
 // THE SOFTWARE.
 
 using System;
+using System.IO;
 using System.Net;
 using Endofunk.FX;
 using static Endofunk.FX.Prelude;
 
 namespace Endofunk.FX.Net {
   public static class Web {
-    private static Func<string, Result<string>> DownloadUrl(bool debug = false)
+    private static Func<string, Result<string>> DownloadUrl(bool debug = false, string filePath = "")
       => EscapeURL
       .Compose(ConnectToURL)
       .Compose(ValidateHTTPResponse)
       .Compose(PrintHttpWebResponseProperties(debug))
-      .Compose(GetDataFromInputStream);
+      .Compose(GetDataFromInputStream(filePath));
       
-    public static Result<A> DownloadAndDeserialize<A>(this Result<string> url, Func<string, Result<A>> constructor, bool debug = false) {
-      return url.Bind(DownloadUrl(debug).Compose(constructor));
+    public static Result<A> DownloadAndDeserialize<A>(this Result<string> url, Func<string, Result<A>> constructor, bool debug = false, string filePath = "") {
+      return url.Bind(DownloadUrl(debug, filePath).Compose(constructor));
     }
 
     public static Func<string, Result<string>> EscapeURL => url => Try(() => Uri.EscapeUriString(url));
@@ -48,9 +49,18 @@ namespace Endofunk.FX.Net {
       throw new WebException(response.GetResponseStream().ReadToEndOfStream());
     });
 
-    public static Func<HttpWebResponse, Result<string>> GetDataFromInputStream => response => Try(() => {
+    private static void SaveJson(string filePath, string contents) {
+      try { 
+        File.WriteAllText(filePath, contents);
+      } catch (Exception e) {
+        Console.WriteLine($"SaveJson: {LogDefault(e)}");
+      }
+    }
+
+    public static Func<HttpWebResponse, Result<string>> GetDataFromInputStream(string filePath) => response => Try(() => {
       var result = response.GetResponseStream().ReadToEndOfStream();
       response.Close();
+      if (!filePath.IsEmpty()) SaveJson(filePath, result);      
       return result;
     });
 

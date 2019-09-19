@@ -32,17 +32,29 @@ namespace Endofunk.FX {
     private readonly Reducer<S, A> Reducer;
     private readonly List<Subscriber<S>> Subscribers = List<Subscriber<S>>();
     private S State;
-    internal Store(Reducer<S, A> reducer, S state) => (Reducer, State) = (reducer, state);
+    private Action<A> Dispatcher;
+
+    internal Store(Reducer<S, A> reducer, S state) {
+      Reducer = reducer;
+      State = state;
+      Dispatcher = Act<A>(action => State = Reducer.Reduce(State, action));
+    }
+
+    internal Store(Reducer<S, A> reducer, S state, params Func<Func<S>, Action<A>, Func<Action<A>, Action<A>>>[] middleware) {
+      Reducer = reducer;
+      State = state;
+      Dispatcher = action => State = Reducer.Reduce(State, action);
+      Dispatcher = middleware.Combine()(() => State, Dispatcher)(Dispatcher);
+    }
     public static Store<S, A> Create(Reducer<S, A> reducer, S state) => new Store<S, A>(reducer, state);
 
     public Subscriber<S> Subscribe(Action<S> action) {
-      var subscriber = Subscriber<S>.Create(action);
+      var subscriber = Subscriber<S>(action);
       Subscribers.Add(subscriber);
       subscriber.Update(State);
       return subscriber;
     }
-
-    private async Task DispatchActions(params A[] actions) => await Task.Run(() => State = actions.Aggregate(State, Reducer.Reduce));
+    private async Task DispatchActions(params A[] actions) => await Task.Run(() => actions.ForEach(Dispatcher));
     public void DispatchAsync(params A[] actions) => DispatchActions(actions).ContinueWith(t => UpdateSubscribers());
 
     private void UpdateSubscribers() {
@@ -51,18 +63,13 @@ namespace Endofunk.FX {
     }
 
     public void Dispatch(params A[] actions) {
-      State = actions.Aggregate(State, Reducer.Reduce);
+      actions.ForEach(Dispatcher);
       UpdateSubscribers();
     }
 
     public int UnSubscribe(Subscriber<S> subscriber) => Subscribers.RemoveAll(s => s.Id == subscriber.Id);
     public void Fold(Action<S> f) => f(State);
     public R Fold<R>(Func<S, R> f) => f(State);
-  }
-
-  public sealed class Middleware<S, N, A> {
-    public readonly Func<S, N, A, S> Reduce;
-    internal Middleware(Func<S, N, A, S> reduce) => Reduce = reduce;
   }
 
   public sealed class Reducer<S, A> {
@@ -91,24 +98,21 @@ namespace Endofunk.FX {
 
   public static class ReducerExtensions {
     public static Reducer<S, A> Compose<S, A>(this Reducer<S, A> f, Reducer<S, A> g) => new Reducer<S, A>((s, a) => g.Reduce(f.Reduce(s, a), a));
+  }
 
-    /*
-    func mapping <A, B, C> (f: A -> B) -> (((C, B) -> C) -> ((C, A) -> C)) {
-      return { reducer in
-        return { accum, a in 
-          return reducer(accum, f(a))
-        }
-      }
-    }
-    */
-
-    //public static Reducer<S, A> Map<S, A, B>(this Reducer<S, A> reducer, Func<A, B> f) => reducer.Reduce((s, a) => reducer(s, f(a)));
+  public static class MiddlewareExtensions {
+    public static Func<Func<S>, Action<A>, Func<Action<A>, Action<A>>> Combine<S, A>(this Func<Func<S>, Action<A>, Func<Action<A>, Action<A>>>[] middleware) => (getState, dispatch) => {
+      return d => middleware
+        .Select(m => m(getState, dispatch))
+        .Reverse()
+        .Aggregate(d, (d2, next) => next(d2));
+    };
   }
 
   public static partial class Prelude {
     public static Store<S, A> Store<S, A>(Reducer<S, A> reducer, S state) => new Store<S, A>(reducer, state);
+    public static Store<S, A> Store<S, A>(Reducer<S, A> reducer, S state, params Func<Func<S>, Action<A>, Func<Action<A>, Action<A>>>[] middleware) => new Store<S, A>(reducer, state, middleware);
     public static Reducer<S, A> Reducer<S, A>(Func<S, A, S> reduce) => new Reducer<S, A>(reduce);
-    public static Middleware<S, N, A> Middleware<S, N, A>(Func<S, N, A, S> reduce) => new Middleware<S, N, A>(reduce);
     public static Subscriber<S> Subscriber<S>(Action<S> compute) => new Subscriber<S>(compute);
   }
 }

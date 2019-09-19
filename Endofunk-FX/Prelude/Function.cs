@@ -104,6 +104,17 @@ namespace Endofunk.FX {
     public static Func<A, B, C, D, E, F, G, H> Fun<A, B, C, D, E, F, G, H>(Func<A, B, C, D, E, F, G, H> fn) => fn;
     #endregion
 
+    #region Lift to Action Form
+    public static Action<A> Act<A>(Action<A> fn) => fn;
+    public static Action<A, B> Act<A, B>(Action<A, B> fn) => fn;
+    public static Action<A, B, C> Act<A, B, C>(Action<A, B, C> fn) => fn;
+    public static Action<A, B, C, D> Act<A, B, C, D>(Action<A, B, C, D> fn) => fn;
+    public static Action<A, B, C, D, E> Act<A, B, C, D, E>(Action<A, B, C, D, E> fn) => fn;
+    public static Action<A, B, C, D, E, F> Act<A, B, C, D, E, F>(Action<A, B, C, D, E, F> fn) => fn;
+    public static Action<A, B, C, D, E, F, G> Act<A, B, C, D, E, F, G>(Action<A, B, C, D, E, F, G> fn) => fn;
+    public static Action<A, B, C, D, E, F, G, H> Act<A, B, C, D, E, F, G, H>(Action<A, B, C, D, E, F, G, H> fn) => fn;
+    #endregion
+
     #region Lift Action to Func Form
     public static Func<Unit> Fun(Action fn) => () => { fn(); return default; };
     public static Func<A, Unit> Fun<A>(Action<A> fn) => a => { fn(a); return default; };
