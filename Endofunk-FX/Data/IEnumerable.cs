@@ -30,26 +30,6 @@ using static Endofunk.FX.Prelude;
 namespace Endofunk.FX {
 
   public static partial class IEnumerableExtensions {
-    #region Zip
-    public static IEnumerable<R> Zip<A, B, C, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, Func<A, B, C, R> f) {
-      var (a, b, c) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator());
-      while (a.MoveNext() && b.MoveNext() && c.MoveNext()) {
-        yield return f(a.Current, b.Current, c.Current);
-      }
-    }
-
-    public static IEnumerable<R> Zip<A, B, C, D, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, IEnumerable<D> sd, Func<A, B, C, D, R> f) {
-      var (a, b, c, d) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator(), sd.GetEnumerator());
-      while (a.MoveNext() && b.MoveNext() && c.MoveNext() && d.MoveNext()) {
-        yield return f(a.Current, b.Current, c.Current, d.Current);
-      }
-    }
-
-    public static (IEnumerable<A>, IEnumerable<B>) UnZip<A, B>(this IEnumerable<(A, B)> sab) => sab.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2)));
-    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>) UnZip<A, B, C>(this IEnumerable<(A, B, C)> sabc) => sabc.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3)));
-    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>, IEnumerable<D>) UnZip<A, B, C, D>(this IEnumerable<(A, B, C, D)> sabcd) => sabcd.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>(), Enumerable.Empty<D>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3), a.Item4.Append(e.Item4)));
-    #endregion
-
     #region Foreach
     public static void ForEach<A>(this IEnumerable<A> @this, Action<A> f) {
       foreach (A e in @this) { f(e); }
@@ -138,6 +118,7 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<R>> TraverseM<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(Enumerable.Empty<R>().ToReader<S, IEnumerable<R>>(), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static Either<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
     public static Validation<L, IEnumerable<R>> TraverseM<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
+    public static Lazy<IEnumerable<B>> TraverseM<A, B>(this IEnumerable<A> @this, Func<A, Lazy<B>> f) => @this.Fold(Lazy(Enumerable.Empty<B>()), (a, e) => a.FlatMap(xs => f(e).Map(x => xs.Append(x))));
 
     public static Maybe<IEnumerable<B>> TraverseA<A, B>(this IEnumerable<A> @this, Func<A, Maybe<B>> f) => @this.Fold(Just(Enumerable.Empty<B>()), (a, e) => Just(Append<B>().Curry()).Apply(a).Apply(f(e)));
     public static Identity<IEnumerable<R>> TraverseA<A, R>(this IEnumerable<A> @this, Func<A, Identity<R>> f) => @this.Fold(Of(Enumerable.Empty<R>()), (a, e) => Of(Append<R>().Curry()).Apply(a).Apply(f(e)));
@@ -146,6 +127,7 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<R>> TraverseA<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.Fold(Enumerable.Empty<R>().ToReader<S, IEnumerable<R>>(), (a, e) => Append<R>().Curry().ToReader<S, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>().Apply(a).Apply(f(e)));
     public static Either<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.Fold(Right<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Right<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
     public static Validation<L, IEnumerable<R>> TraverseA<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.Fold(Success<L, IEnumerable<R>>(Enumerable.Empty<R>()), (a, e) => Success<L, Func<IEnumerable<R>, Func<R, IEnumerable<R>>>>(Append<R>().Curry()).Apply(a).Apply(f(e)));
+    public static Lazy<IEnumerable<B>> TraverseA<A, B>(this IEnumerable<A> @this, Func<A, Lazy<B>> f) => @this.Fold(Lazy(Enumerable.Empty<B>()), (a, e) => Lazy(Append<B>().Curry()).Apply(a).Apply(f(e)));
 
     public static Maybe<IEnumerable<B>> Traverse<A, B>(this IEnumerable<A> @this, Func<A, Maybe<B>> f) => @this.TraverseA(f);
     public static Identity<IEnumerable<B>> Traverse<A, B>(this IEnumerable<A> @this, Func<A, Identity<B>> f) => @this.TraverseA(f);
@@ -154,6 +136,7 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<R>> Traverse<S, A, R>(this IEnumerable<A> @this, Func<A, Reader<S, R>> f) => @this.TraverseA(f);
     public static Either<L, IEnumerable<R>> Traverse<L, A, R>(this IEnumerable<A> @this, Func<A, Either<L, R>> f) => @this.TraverseA(f);
     public static Validation<L, IEnumerable<R>> Traverse<L, A, R>(this IEnumerable<A> @this, Func<A, Validation<L, R>> f) => @this.TraverseA(f);
+    public static Lazy<IEnumerable<B>> Traverse<A, B>(this IEnumerable<A> @this, Func<A, Lazy<B>> f) => @this.TraverseA(f);
     #endregion
 
     #region Sequence
@@ -164,6 +147,7 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<A>> SequenceM<S, A>(this IEnumerable<Reader<S, A>> @this) => @this.TraverseM(Id<Reader<S, A>>());
     public static Either<L, IEnumerable<A>> SequenceM<L, A>(this IEnumerable<Either<L, A>> @this) => @this.TraverseM(Id<Either<L, A>>());
     public static Validation<L, IEnumerable<A>> SequenceM<L, A>(this IEnumerable<Validation<L, A>> @this) => @this.TraverseM(Id<Validation<L, A>>());
+    public static Lazy<IEnumerable<A>> SequenceM<A>(this IEnumerable<Lazy<A>> @this) => @this.TraverseM(Id<Lazy<A>>());
 
     public static Maybe<IEnumerable<A>> SequenceA<A>(this IEnumerable<Maybe<A>> @this) => @this.TraverseA(Id<Maybe<A>>());
     public static Identity<IEnumerable<A>> SequenceA<A>(this IEnumerable<Identity<A>> @this) => @this.TraverseA(Id<Identity<A>>());
@@ -172,6 +156,7 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<A>> SequenceA<S, A>(this IEnumerable<Reader<S, A>> @this) => @this.TraverseA(Id<Reader<S, A>>());
     public static Either<L, IEnumerable<A>> SequenceA<L, A>(this IEnumerable<Either<L, A>> @this) => @this.TraverseA(Id<Either<L, A>>());
     public static Validation<L, IEnumerable<A>> SequenceA<L, A>(this IEnumerable<Validation<L, A>> @this) => @this.TraverseA(Id<Validation<L, A>>());
+    public static Lazy<IEnumerable<A>> SequenceA<A>(this IEnumerable<Lazy<A>> @this) => @this.TraverseA(Id<Lazy<A>>());
 
     public static Maybe<IEnumerable<A>> Sequence<A>(this IEnumerable<Maybe<A>> @this) => @this.SequenceA();
     public static Identity<IEnumerable<A>> Sequence<A>(this IEnumerable<Identity<A>> @this) => @this.SequenceA();
@@ -180,6 +165,33 @@ namespace Endofunk.FX {
     public static Reader<S, IEnumerable<A>> Sequence<S, A>(this IEnumerable<Reader<S, A>> @this) => @this.SequenceA();
     public static Either<L, IEnumerable<A>> Sequence<L, A>(this IEnumerable<Either<L, A>> @this) => @this.SequenceA();
     public static Validation<L, IEnumerable<A>> Sequence<L, A>(this IEnumerable<Validation<L, A>> @this) => @this.SequenceA();
+    public static Lazy<IEnumerable<A>> Sequence<A>(this IEnumerable<Lazy<A>> @this) => @this.SequenceA();
+    #endregion
+
+
+    #region Zip
+    public static IEnumerable<R> Zip<A, B, C, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, Func<A, B, C, R> f) {
+      var (a, b, c) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator());
+      while (a.MoveNext() && b.MoveNext() && c.MoveNext()) {
+        yield return f(a.Current, b.Current, c.Current);
+      }
+    }
+
+    public static IEnumerable<R> Zip<A, B, C, D, R>(this IEnumerable<A> sa, IEnumerable<B> sb, IEnumerable<C> sc, IEnumerable<D> sd, Func<A, B, C, D, R> f) {
+      var (a, b, c, d) = (sa.GetEnumerator(), sb.GetEnumerator(), sc.GetEnumerator(), sd.GetEnumerator());
+      while (a.MoveNext() && b.MoveNext() && c.MoveNext() && d.MoveNext()) {
+        yield return f(a.Current, b.Current, c.Current, d.Current);
+      }
+    }
+
+    public static (IEnumerable<A>, IEnumerable<B>) UnZip<A, B>(this IEnumerable<(A, B)> @this) => @this.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2)));
+    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>) UnZip<A, B, C>(this IEnumerable<(A, B, C)> @this) => @this.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3)));
+    public static (IEnumerable<A>, IEnumerable<B>, IEnumerable<C>, IEnumerable<D>) UnZip<A, B, C, D>(this IEnumerable<(A, B, C, D)> @this) => @this.Fold((Enumerable.Empty<A>(), Enumerable.Empty<B>(), Enumerable.Empty<C>(), Enumerable.Empty<D>()), (a, e) => (a.Item1.Append(e.Item1), a.Item2.Append(e.Item2), a.Item3.Append(e.Item3), a.Item4.Append(e.Item4)));
+    #endregion
+
+    #region Zip
+    public static IEnumerable<(A, B)> Zip<A, B>(this IEnumerable<A> @this, IEnumerable<B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static IEnumerable<R> ZipWith<A, B, R>(this Func<A, B, R> f, IEnumerable<A> ma, IEnumerable<B> mb) => f.LiftM(ma, mb);
     #endregion
 
     #region Join Recreated

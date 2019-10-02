@@ -88,6 +88,7 @@ namespace Endofunk.FX {
     public static Validation<L, R2> Map<L, R, R2>(this Validation<L, R> @this, Func<R, R2> fn) => @this.MapR(fn);
     public static Validation<L, R2> Map<L, R, R2>(this Func<R, R2> fn, Validation<L, R> @this) => @this.MapR(fn);
     public static Func<Validation<L, R>, Validation<L, R2>> Map<L, R, R2>(this Func<R, R2> fn) => @this => @this.MapR(fn);
+    public static Validation<L, R2> Select<L, R, R2>(this Validation<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
     #endregion
 
     #region Functor - Bimap, First, Second
@@ -107,6 +108,8 @@ namespace Endofunk.FX {
     public static Validation<L, R2> FlatMap<L, R, R2>(this Validation<L, R> @this, Func<R, Validation<L, R2>> f) => @this.FlatMapR(f);
     public static Validation<L, R2> FlatMap<L, R, R2>(this Func<R, Validation<L, R2>> f, Validation<L, R> @this) => @this.FlatMapR(f);
     public static Func<Validation<L, R>, Validation<L, R2>> FlatMap<L, R, R2>(this Func<R, Validation<L, R2>> f) => a => a.FlatMap(f);
+    public static Validation<L, R2> SelectMany<L, R, R2>(this Validation<L, R> @this, Func<R, Validation<L, R2>> fn) => @this.FlatMap(fn);
+    public static Validation<L, R2> SelectMany<L, R, R1, R2>(this Validation<L, R> @this, Func<R, Validation<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToValidation<L, R2>()));
     #endregion
 
     #region Kleisli Composition
@@ -183,6 +186,7 @@ namespace Endofunk.FX {
     public static Reader<R, Validation<L, B>> Traverse<L, R, A, B>(this Validation<L, A> @this, Func<A, Reader<R, B>> f) => @this.Fold(left: l => Reader<R, Validation<L, B>>.Pure(Failure<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
     public static Maybe<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, Maybe<B>> f) => @this.Fold(left: l => Just(Failure<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
     public static Either<L2, Validation<L, B>> Traverse<L2, L, A, B>(this Validation<L, A> @this, Func<A, Either<L2, B>> f) => @this.Fold(left: l => Right<L2, Validation<L, B>>(Failure<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
+    public static Lazy<Validation<L, B>> Traverse<L, A, B>(this Validation<L, A> @this, Func<A, Lazy<B>> f) => @this.Fold(left: l => Lazy<Validation<L, B>>(Failure<L, B>(l)), right: a => f(a).Map(Success<L, B>()));
     #endregion
 
     #region Sequence
@@ -193,7 +197,14 @@ namespace Endofunk.FX {
     public static Reader<R, Validation<L, A>> Sequence<L, R, A>(Validation<L, Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Maybe<Validation<L, A>> Sequence<L, A>(Validation<L, Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
     public static Either<L2, Validation<L, A>> Sequence<L2, L, A>(Validation<L, Either<L2, A>> @this) => @this.Traverse(Id<Either<L2, A>>());
-    #endregion 
+    public static Lazy<Validation<L, A>> Sequence<L, A>(Validation<L, Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
+    #endregion
+
+    #region Zip
+    public static Validation<L, (A, B)> Zip<L, A, B>(this Validation<L, A> @this, Validation<L, B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static Validation<L, C> ZipWith<L, A, B, C>(this Func<A, B, C> f, Validation<L, A> ma, Validation<L, B> mb) => f.LiftM(ma, mb);
+    public static (Validation<L, A>, Validation<L, B>) UnZip<L, A, B>(this Validation<L, (A, B)> @this) => (First<A, B>().LiftM(@this), Second<A, B>().LiftM(@this));
+    #endregion
 
     #region Match
     public static void Match<L, R>(this Validation<L, R> @this, Action<List<L>> left, Action<R> right) {
@@ -206,12 +217,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<L, R>(this Validation<L, R> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Linq Conformance
-    public static Validation<L, R2> Select<L, R, R2>(this Validation<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
-    public static Validation<L, R2> SelectMany<L, R, R2>(this Validation<L, R> @this, Func<R, Validation<L, R2>> fn) => @this.FlatMap(fn);
-    public static Validation<L, R2> SelectMany<L, R, R1, R2>(this Validation<L, R> @this, Func<R, Validation<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToValidation<L, R2>()));
     #endregion
 
     #region ToValidation

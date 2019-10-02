@@ -44,6 +44,7 @@ namespace Endofunk.FX {
     }
     public static State<S, B> Map<S, A, B>(this Func<A, B> fn, State<S, A> @this) => @this.Map(fn);
     public static Func<State<S, A>, State<S, B>> Map<S, A, B>(this Func<A, B> fn) => @this => @this.Map(fn);
+    public static State<S, R> Select<S, A, R>(this State<S, A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -95,7 +96,6 @@ namespace Endofunk.FX {
     #endregion
 
     #region Linq Conformance
-    public static State<S, R> Select<S, A, R>(this State<S, A> @this, Func<A, R> fn) => @this.Map(fn);
     //public static State<S, R> SelectMany<S, A, B, R>(this State<S, A> @this, Func<A, State<S, B>> fn, Func<A, B, R> select) => State<S, R>.Of(s => @this.FlatMap(a => fn(a).FlatMap<S, B, R>(b => State<S, R>.Of(select(a, b)))));
     #endregion
 

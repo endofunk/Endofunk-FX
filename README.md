@@ -25,6 +25,9 @@ The following is an incompete list of the functional data types included in `End
 | Reducer | The Reducer is modelled on the Redux concept. |
 | Subscriber | The Suscriber is modelled on the Redux concept. |
 | *Action* | The Tagged type fulfills the role of the Action in the Redux concept. |
+| Lazy | The Lazy type extends the existing Microsoft Lazy type with functor, monad, applicative functor algebras. |
+| Lens | Functional getter and setter for product types. |
+| Prism | Functional getter and setter for sum types. |
 
 All types support `Functor`, `Applicative Functor` and `Monad`; with `monadic lifters`, `applicative lifters`, `Kleisli monadic composition`, `Linq`, `Traverse` and `Sequence`.
 
@@ -45,7 +48,6 @@ Nu-get package | Description
 # Future Plans
 
 - The `IO`, `Writer` and `Union` type monads are a work in progress. 
-- In addition to this `STAB` and `SA` Optics type covering `Lens` and `Prims` are also a work in progress and will be added shortly.  In future this may transition to `profunctor` optics.
 - I intend to explore adding functional extension methods to the C# 8.0 `Nullable` types to turn Nullable into a 1st class functional type similar to `Maybe`, and hopefully to also enabe smooth transforms between `value` and `class` element types.
 - Functional concurrency with `Task`, and/or `Promise / Future` types.
 - ...

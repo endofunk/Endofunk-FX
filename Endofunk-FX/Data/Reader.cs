@@ -65,12 +65,15 @@ namespace Endofunk.FX {
     public static Reader<Env, B> Map<Env, A, B>(this Reader<Env, A> @this, Func<A, B> f) => Reader<Env, B>.Of(@this.RunReader.Compose(f));
     public static Reader<Env, B> Map<Env, A, B>(this Func<A, B> f, Reader<Env, A> @this) => @this.Map(f);
     public static Func<Reader<Env, A>, Reader<Env, B>> Map<Env, A, B>(this Func<A, B> f) => @this => @this.Map(f);
+    public static Reader<Env, R> Select<Env, A, R>(this Reader<Env, A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
     public static Reader<Env, B> FlatMap<Env, A, B>(this Reader<Env, A> @this, Func<A, Reader<Env, B>> f) => Reader<Env, B>.Of(e => f(@this.RunReader(e)).RunReader(e));
     public static Reader<Env, B> FlatMap<Env, A, B>(this Func<A, Reader<Env, B>> f, Reader<Env, A> @this) => @this.FlatMap(f);
     public static Func<Reader<Env, A>, Reader<Env, B>> FlatMap<Env, A, B>(this Func<A, Reader<Env, B>> f) => a => a.FlatMap(f);
+    public static Reader<Env, R> SelectMany<Env, A, R>(this Reader<Env, A> @this, Func<A, Reader<Env, R>> fn) => @this.FlatMap(fn);
+    public static Reader<Env, R> SelectMany<Env, A, B, R>(this Reader<Env, A> @this, Func<A, Reader<Env, B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToReader<Env, R>()));
     #endregion
 
     #region Kleisli Composition
@@ -110,12 +113,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<Env, A>(this Reader<Env, A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Linq Conformance
-    public static Reader<Env, R> Select<Env, A, R>(this Reader<Env, A> @this, Func<A, R> fn) => @this.Map(fn);
-    public static Reader<Env, R> SelectMany<Env, A, R>(this Reader<Env, A> @this, Func<A, Reader<Env, R>> fn) => @this.FlatMap(fn);
-    public static Reader<Env, R> SelectMany<Env, A, B, R>(this Reader<Env, A> @this, Func<A, Reader<Env, B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToReader<Env, R>()));
     #endregion
 
     #region ToReader

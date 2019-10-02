@@ -135,6 +135,7 @@ namespace Endofunk.FX {
     public static Maybe<U> Map<T, U>(this Maybe<T> @this, Func<T, U> fn) => @this.Fold(Maybe<U>.Nothing(), (a, e) => @this.IsJust ? Maybe<U>.Just(fn(e)) : a);
     public static Maybe<R> Map<A, R>(this Func<A, R> fn, Maybe<A> @this) => @this.Map(fn);
     public static Func<Maybe<A>, Maybe<R>> Map<A, R>(this Func<A, R> fn) => @this => @this.Map(fn);
+    public static Maybe<R> Select<A, R>(this Maybe<A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -142,6 +143,8 @@ namespace Endofunk.FX {
     public static Maybe<R> FlatMap<A, R>(this Func<A, Maybe<R>> fn, Maybe<A> @this) => @this.FlatMap(fn);
     public static Func<Maybe<A>, Maybe<B>> FlatMap<A, B>(this Func<A, Maybe<B>> f) => a => a.FlatMap(f);
     public static Maybe<R> Bind<A, R>(this Maybe<A> @this, Func<A, Maybe<R>> fn) => @this.FlatMap(fn);
+    public static Maybe<R> SelectMany<A, R>(this Maybe<A> @this, Func<A, Maybe<R>> fn) => @this.FlatMap(fn);
+    public static Maybe<R> SelectMany<A, B, R>(this Maybe<A> @this, Func<A, Maybe<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToMaybe()));
     #endregion
 
     #region Kleisli Composition
@@ -200,6 +203,7 @@ namespace Endofunk.FX {
     public static Reader<R, Maybe<B>> Traverse<R, A, B>(this Maybe<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(nothing: () => Reader<R, Maybe<B>>.Pure(Nothing<B>()), just: a => f(a).Map(Just));
     public static Either<L, Maybe<B>> Traverse<L, A, B>(this Maybe<A> @this, Func<A, Either<L, B>> f) => @this.Fold(nothing: () => Right<L, Maybe<B>>(Nothing<B>()), just: a => f(a).Map(Just));
     public static Validation<L, Maybe<B>> Traverse<L, A, B>(this Maybe<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(nothing: () => Success<L, Maybe<B>>(Nothing<B>()), just: a => f(a).Map(Just));
+    public static Lazy<Maybe<B>> Traverse<A, B>(this Maybe<A> @this, Func<A, Lazy<B>> f) => @this.Fold(nothing: () => Lazy(Nothing<B>()), just: a => f(a).Map(Just));
     #endregion
 
     #region Sequence
@@ -210,6 +214,7 @@ namespace Endofunk.FX {
     public static Reader<R, Maybe<A>> Sequence<R, A>(Maybe<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Either<L, Maybe<A>> Sequence<L, A>(Maybe<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
     public static Validation<L, Maybe<A>> Sequence<L, A>(Maybe<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
+    public static Lazy<Maybe<A>> Sequence<A>(Maybe<Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
     #endregion 
 
     #region Zip
@@ -228,12 +233,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<A>(this Maybe<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Linq Conformance
-    public static Maybe<R> Select<A, R>(this Maybe<A> @this, Func<A, R> fn) => @this.Map(fn);
-    public static Maybe<R> SelectMany<A, R>(this Maybe<A> @this, Func<A, Maybe<R>> fn) => @this.FlatMap(fn);
-    public static Maybe<R> SelectMany<A, B, R>(this Maybe<A> @this, Func<A, Maybe<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToMaybe()));
     #endregion
 
     #region GetOrElse

@@ -16,7 +16,7 @@
     <Summary>Functional wrapper for System.Web and Newtonsoft.Json</Summary>
     <PackageReleaseNotes>Update to Endofunk.FX 0.3.3.6</PackageReleaseNotes>
     <PackageTags>C#, Functional, Functional Programming, JSON</PackageTags>
-    <ReleaseVersion>0.3.3.6</ReleaseVersion>
+    <ReleaseVersion>0.3.3.7</ReleaseVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Endofunk.FX" Version="0.3.3.6" />
+    <PackageReference Include="Endofunk.FX" Version="0.3.3.7" />
   </ItemGroup>
 </Project>

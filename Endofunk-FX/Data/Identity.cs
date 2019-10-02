@@ -69,6 +69,7 @@ namespace Endofunk.FX {
     public static Identity<R> Map<A, R>(this Func<A, R> fn, Identity<A> @this) => @this.Map(fn);
     public static Identity<R> Map<A, R>(this Identity<A> @this, Func<A, R> fn) => fn(@this.Value);
     public static Func<Identity<A>, Identity<R>> Map<A, R>(this Func<A, R> fn) => xas => xas.Map(fn);
+    public static Identity<R> Select<A, R>(this Identity<A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -76,6 +77,8 @@ namespace Endofunk.FX {
     public static Identity<R> FlatMap<A, R>(this Func<A, Identity<R>> fn, Identity<A> @this) => @this.FlatMap(fn);
     public static Func<Identity<A>, Identity<B>> FlatMap<A, B>(this Func<A, Identity<B>> f) => a => a.FlatMap(f);
     public static Identity<R> Bind<A, R>(this Identity<A> @this, Func<A, Identity<R>> fn) => @this.FlatMap(fn);
+    public static Identity<R> SelectMany<A, R>(this Identity<A> @this, Func<A, Identity<R>> fn) => @this.FlatMap(fn);
+    public static Identity<R> SelectMany<A, B, R>(this Identity<A> @this, Func<A, Identity<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIdentity()));
     #endregion
 
     #region Kleisli Composition
@@ -134,6 +137,7 @@ namespace Endofunk.FX {
     public static Reader<R, Identity<B>> Traverse<R, A, B>(this Identity<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(a => f(a).Map(Of));
     public static Either<L, Identity<B>> Traverse<L, A, B>(this Identity<A> @this, Func<A, Either<L, B>> f) => @this.Fold(a => f(a).Map(Of));
     public static Validation<L, Identity<B>> Traverse<L, A, B>(this Identity<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(a => f(a).Map(Of));
+    public static Lazy<Identity<B>> Traverse<A, B>(this Identity<A> @this, Func<A, Lazy<B>> f) => @this.Fold(a => f(a).Map(Of));
     #endregion
 
     #region Sequence
@@ -144,10 +148,17 @@ namespace Endofunk.FX {
     public static Reader<R, Identity<A>> Sequence<R, A>(Identity<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Either<L, Identity<A>> Sequence<L, A>(Identity<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
     public static Validation<L, Identity<A>> Sequence<L, A>(Identity<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
+    public static Lazy<Identity<A>> Sequence<A>(Identity<Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
     #endregion 
 
     #region Selective Applicative Functor
     public static Identity<B> Selective<A, B>(this Identity<Either<A, B>> @this, Identity<Func<A, B>> f) => @this.Value.IsRight ? Of(@this.Value.RValue) : Of(f.Value(@this.Value.LValue));
+    #endregion
+
+    #region Zip
+    public static Identity<(A, B)> Zip<A, B>(this Identity<A> @this, Identity<B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static Identity<C> ZipWith<A, B, C>(this Func<A, B, C> f, Identity<A> ma, Identity<B> mb) => f.LiftM(ma, mb);
+    public static (Identity<A>, Identity<B>) UnZip<A, B>(this Identity<(A, B)> @this) => (First<A, B>().LiftM(@this), Second<A, B>().LiftM(@this));
     #endregion
 
     #region Match
@@ -159,24 +170,18 @@ namespace Endofunk.FX {
     public static void DebugPrint<A>(this Identity<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
     #endregion
 
-    #region Linq Conformance
-    public static Identity<R> Select<A, R>(this Identity<A> @this, Func<A, R> fn) => @this.Map(fn);
-    public static Identity<R> SelectMany<A, R>(this Identity<A> @this, Func<A, Identity<R>> fn) => @this.FlatMap(fn);
-    public static Identity<R> SelectMany<A, B, R>(this Identity<A> @this, Func<A, Identity<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIdentity()));
-    #endregion
-
     #region Get
     public static A Get<A>(this Identity<A> @this) => @this.Value;
     #endregion
 
     #region ToIdentity
     public static Func<A, Identity<B>> ToIdentity<A, B>(this Func<A, B> f) => a => Of<B>(f(a));
+    public static Identity<A> ToIdentity<A>(this A a) => Identity<A>.Of(a);
     #endregion
   }
 
   public static partial class Prelude {
     #region Syntactic Sugar
-    public static Identity<A> ToIdentity<A>(this A a) => Identity<A>.Of(a);
     public static Identity<A> Of<A>(A a) => Identity<A>.Of(a);
     public static Func<A, Identity<A>> Of<A>() => a => Of<A>(a);
     #endregion

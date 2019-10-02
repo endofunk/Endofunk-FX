@@ -69,7 +69,7 @@ namespace Endofunk.FX {
   } 
   #endregion
 
-  public static partial class EitherExtensions {
+  public static class EitherExtensions {
     #region ForEach
     public static void ForEach<L, R>(this Either<L, R> @this, Action<R> f) => @this.AsEnumerable().ForEach(f);
     #endregion
@@ -94,6 +94,7 @@ namespace Endofunk.FX {
     public static Either<L, R2> Map<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.MapR(fn);
     public static Either<L, R2> Map<L, R, R2>(this Func<R, R2> @this, Either<L, R> e) => e.MapR(@this);
     public static Func<Either<L, R>, Either<L, R2>> Map<L, R, R2>(this Func<R, R2> @this) => e => e.MapR(@this);
+    public static Either<L, R2> Select<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
     #endregion
 
     #region Functor - Bimap, First, Second
@@ -115,6 +116,8 @@ namespace Endofunk.FX {
     public static Either<L, R2> FlatMap<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMapR(fn);
     public static Either<L, R2> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> @this, Either<L, R> e) => e.FlatMapR(@this);
     public static Func<Either<L, R>, Either<L, R2>> FlatMap<L, R, R2>(this Func<R, Either<L, R2>> @this) => a => a.FlatMap(@this);
+    public static Either<L, R2> SelectMany<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMap(fn);
+    public static Either<L, R2> SelectMany<L, R, R1, R2>(this Either<L, R> @this, Func<R, Either<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToEither<L, R2>()));
     #endregion
 
     #region Kleisli Composition
@@ -180,6 +183,7 @@ namespace Endofunk.FX {
     public static Reader<R, Either<L, B>> Traverse<L, R, A, B>(this Either<L, A> @this, Func<A, Reader<R, B>> f) => @this.Fold(left: l => Reader<R, Either<L, B>>.Pure(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     public static Maybe<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Maybe<B>> f) => @this.Fold(left: l => Just(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     public static Validation<L2, Either<L, B>> Traverse<L2, L, A, B>(this Either<L, A> @this, Func<A, Validation<L2, B>> f) => @this.Fold(left: l => Success<L2, Either<L, B>>(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
+    public static Lazy<Either<L, B>> Traverse<L, A, B>(this Either<L, A> @this, Func<A, Lazy<B>> f) => @this.Fold(left: l => Lazy<Either<L, B>>(Left<L, B>(l)), right: a => f(a).Map(Right<L, B>()));
     #endregion
 
     #region Sequence
@@ -190,7 +194,14 @@ namespace Endofunk.FX {
     public static Reader<R, Either<L, A>> Sequence<L, R, A>(Either<L, Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Maybe<Either<L, A>> Sequence<L, A>(Either<L, Maybe<A>> @this) => @this.Traverse(Id<Maybe<A>>());
     public static Validation<L2, Either<L, A>> Sequence<L2, L, A>(Either<L, Validation<L2, A>> @this) => @this.Traverse(Id<Validation<L2, A>>());
-    #endregion 
+    public static Lazy<Either<L, A>> Sequence<L, A>(Either<L, Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
+    #endregion
+
+    #region Zip
+    public static Either<L, (A, B)> Zip<L, A, B>(this Either<L, A> @this, Either<L, B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static Either<L, C> ZipWith<L, A, B, C>(this Func<A, B, C> f, Either<L, A> ma, Either<L, B> mb) => f.LiftM(ma, mb);
+    public static (Either<L, A>, Either<L, B>) UnZip<L, A, B>(this Either<L, (A, B)> @this) => (First<A, B>().LiftM(@this), Second<A, B>().LiftM(@this));
+    #endregion
 
     #region Match
     public static void Match<L, R>(this Either<L, R> @this, Action<L> left, Action<R> right) {
@@ -202,12 +213,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<L, R>(this Either<L, R> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Linq Conformance
-    public static Either<L, R2> Select<L, R, R2>(this Either<L, R> @this, Func<R, R2> fn) => @this.Map(fn);
-    public static Either<L, R2> SelectMany<L, R, R2>(this Either<L, R> @this, Func<R, Either<L, R2>> fn) => @this.FlatMap(fn);
-    public static Either<L, R2> SelectMany<L, R, R1, R2>(this Either<L, R> @this, Func<R, Either<L, R1>> fn, Func<R, R1, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToEither<L, R2>()));
     #endregion
 
     #region ToEither

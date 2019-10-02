@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 
 namespace Endofunk.FX {
-  // "Mother of all Monads"
   public class Cont<R, A> {
     public Func<Func<A, R>, R> Run;
     public Cont(Func<Func<A, R>, R> run) => Run = run;
@@ -41,6 +40,7 @@ namespace Endofunk.FX {
     public static Cont<R, B> Map<R, A, B>(this Cont<R, A> @this, Func<A, B> f) => Cont<R, B>.Create(k => @this.Run(a => k(f(a))));
     public static Cont<R, B> Map<R, A, B>(this Func<A, B> f, Cont<R, A> @this) => @this.Map(f);
     public static Func<Cont<R, A>, Cont<R, B>> Map<R, A, B>(this Func<A, B> f) => @this => @this.Map(f);
+    public static Cont<R, B> Select<R, A, B>(this Cont<R, A> @this, Func<A, B> f) => Cont<R, B>.Create(k => @this.Run(a => k(f(a))));
     #endregion
 
     #region Monad
@@ -48,6 +48,8 @@ namespace Endofunk.FX {
     public static Cont<R, B> FlatMap<R, A, B>(this Func<A, Cont<R, B>> f, Cont<R, A> @this) => @this.FlatMap(f);
     public static Func<Cont<R, A>, Cont<R, B>> FlatMap<R, A, B>(this Func<A, Cont<R, B>> f) => @this => @this.FlatMap(f);
     public static Cont<R, B> Bind<R, A, B>(this Cont<R, A> @this, Func<A, Cont<R, B>> f) => @this.FlatMap(f);
+    public static Cont<R, B> SelectMany<R, A, B>(this Cont<R, A> @this, Func<A, Cont<R, B>> f) => @this.FlatMap(f);
+    public static Cont<R, R2> SelectMany<R, A, B, R2>(this Cont<R, A> @this, Func<A, Cont<R, B>> fn, Func<A, B, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToCont<R, R2>()));
     #endregion
 
     #region Monad - Lift a function & actions
@@ -87,12 +89,6 @@ namespace Endofunk.FX {
     //public static Maybe<Cont<R, B>> Traverse<R, A, B>(this Cont<R, A> @this, Func<A, Maybe<B>> f) => @this.Fold<R, B>(a => f(a).Map(Of<R, B>()));
     //#endregion
 
-    #region Linq
-    public static Cont<R, B> Select<R, A, B>(this Cont<R, A> @this, Func<A, B> f) => Cont<R, B>.Create(k => @this.Run(a => k(f(a))));
-    public static Cont<R, B> SelectMany<R, A, B>(this Cont<R, A> @this, Func<A, Cont<R, B>> f) => @this.FlatMap(f);
-    public static Cont<R, R2> SelectMany<R, A, B, R2>(this Cont<R, A> @this, Func<A, Cont<R, B>> fn, Func<A, B, R2> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToCont<R, R2>()));
-    #endregion
-
     #region Callcc
     /// The callcc function; call with current continuation; is there to allow “escaping” from the current continuation.
     public static Cont<R, A> CallCC<R, A, B>(Func<Func<A, Cont<R, B>>, Cont<R, A>> f) => Cont<R, A>.Create(k => f(a => Cont<R, B>.Create(x => k(a))).Run(k));
@@ -103,7 +99,7 @@ namespace Endofunk.FX {
     public static Cont<R, B> ToCont<R, A, B>(this Cont<R, A> @this, Func<A, B> f) => Cont<R, B>.Create(k => @this.Run(f.Compose(k)));
     public static Cont<R, C> ToCont<R, A, B, C>(this Cont<R, A> @this, Cont<R, B> @that, Func<A, B, C> f) => Cont<R, C>.Create(k => @this.Run(a => that.Run(b => k(f(a, b)))));
     public static Cont<R, D> ToCont<R, A, B, C, D>(this Cont<R, A> @this, Cont<R, B> @thatb, Cont<R, C> @thatc, Func<A, B, C, D> f) => Cont<R, D>.Create(k => @this.Run(a => @thatb.Run(b => @thatc.Run(c => k(f(a, b, c))))));
-    public static Func<A, Cont<R, A>> Of<R, A>() => a => Cont<R, A>.Of(a);
+    //public static Func<A, Cont<R, A>> Of<R, A>() => a => Cont<R, A>.Of(a);
     #endregion
   }
 }

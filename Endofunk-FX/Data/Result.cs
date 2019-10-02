@@ -106,6 +106,7 @@ namespace Endofunk.FX {
     public static Result<R> Map<A, R>(this Func<A, R> fn, Result<A> @this) => @this.Map(fn);
     public static Result<R> Map<A, R>(this Result<A> @this, Func<A, R> fn) => @this.HasValue ? Value(fn(@this.SuccessValue)) : Error<R>(@this.ErrorValue);
     public static Func<Result<A>, Result<R>> Map<A, R>(this Func<A, R> fn) => @this => @this.Map(fn);
+    public static Result<R> Select<A, R>(this Result<A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -113,6 +114,8 @@ namespace Endofunk.FX {
     public static Result<R> FlatMap<A, R>(this Func<A, Result<R>> fn, Result<A> @this) => @this.FlatMap(fn);
     public static Func<Result<A>, Result<B>> FlatMap<A, B>(this Func<A, Result<B>> f) => a => a.FlatMap(f);
     public static Result<R> Bind<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.FlatMap(fn);
+    public static Result<R> SelectMany<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.FlatMap(fn);
+    public static Result<R> SelectMany<A, B, R>(this Result<A> @this, Func<A, Result<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToResult()));
     #endregion
 
     #region Kleisli Composition
@@ -120,16 +123,16 @@ namespace Endofunk.FX {
     #endregion
 
     #region Monad - Lift a function & actions
-    public static Result<R> LiftM<A, R>(this Func<A, R> @this, Result<A> a) => a.FlatMap(xa => Value(@this(xa)));
-    public static Result<R> LiftM<A, B, R>(this Func<A, B, R> @this, Result<A> a, Result<B> b) => a.FlatMap(xa => b.FlatMap(xb => Value(@this(xa, xb))));
-    public static Result<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Result<A> a, Result<B> b, Result<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Value(@this(xa, xb, xc)))));
-    public static Result<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Value(@this(xa, xb, xc, xd))))));
-    public static Result<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => Value(@this(xa, xb, xc, xd, xe)))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => Value(@this(xa, xb, xc, xd, xe, xf))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => Value(@this(xa, xb, xc, xd, xe, xf, xg)))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
-    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i, Result<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => Value(@this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
+    public static Result<R> LiftM<A, R>(this Func<A, R> @this, Result<A> a) => a.FlatMap(xa => Try(() => @this(xa)));
+    public static Result<R> LiftM<A, B, R>(this Func<A, B, R> @this, Result<A> a, Result<B> b) => a.FlatMap(xa => b.FlatMap(xb => Try(() => @this(xa, xb))));
+    public static Result<R> LiftM<A, B, C, R>(this Func<A, B, C, R> @this, Result<A> a, Result<B> b, Result<C> c) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => Try(() => @this(xa, xb, xc)))));
+    public static Result<R> LiftM<A, B, C, D, R>(this Func<A, B, C, D, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => Try(() => @this(xa, xb, xc, xd))))));
+    public static Result<R> LiftM<A, B, C, D, E, R>(this Func<A, B, C, D, E, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => Try(() => @this(xa, xb, xc, xd, xe)))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, R>(this Func<A, B, C, D, E, F, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => Try(() => @this(xa, xb, xc, xd, xe, xf))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, R>(this Func<A, B, C, D, E, F, G, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => Try(() => @this(xa, xb, xc, xd, xe, xf, xg)))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, R>(this Func<A, B, C, D, E, F, G, H, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => Try(() => @this(xa, xb, xc, xd, xe, xf, xg, xh))))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, R>(this Func<A, B, C, D, E, F, G, H, I, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => Try(() => @this(xa, xb, xc, xd, xe, xf, xg, xh, xi)))))))))));
+    public static Result<R> LiftM<A, B, C, D, E, F, G, H, I, J, R>(this Func<A, B, C, D, E, F, G, H, I, J, R> @this, Result<A> a, Result<B> b, Result<C> c, Result<D> d, Result<E> e, Result<F> f, Result<G> g, Result<H> h, Result<I> i, Result<J> j) => a.FlatMap(xa => b.FlatMap(xb => c.FlatMap(xc => d.FlatMap(xd => e.FlatMap(xe => f.FlatMap(xf => g.FlatMap(xg => h.FlatMap(xh => i.FlatMap(xi => j.FlatMap(xj => Try(() => @this(xa, xb, xc, xd, xe, xf, xg, xh, xi, xj))))))))))));
     #endregion
 
     #region Applicative Functor
@@ -171,6 +174,7 @@ namespace Endofunk.FX {
     public static Reader<R, Result<B>> Traverse<R, A, B>(this Result<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(failed: e => Reader<R, Result<B>>.Pure(Error<B>(e)), success: a => f(a).Map(Value));
     public static Either<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Either<L, B>> f) => @this.Fold(failed: e => Right<L, Result<B>>(Error<B>(e)), success: a => f(a).Map(Value));
     public static Validation<L, Result<B>> Traverse<L, A, B>(this Result<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(failed: e => Success<L, Result<B>>(Error<B>(e)), success: a => f(a).Map(Value));
+    public static Lazy<Result<B>> Traverse<A, B>(this Result<A> @this, Func<A, Lazy<B>> f) => @this.Fold(failed: e => Lazy<Result<B>>(Error<B>(e)), success: a => f(a).Map(Value));
     #endregion
 
     #region Sequence
@@ -182,7 +186,14 @@ namespace Endofunk.FX {
     public static Reader<R, Result<A>> Sequence<R, A>(this Result<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Either<L, Result<A>> Sequence<L, A>(this Result<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
     public static Validation<L, Result<A>> Sequence<L, A>(this Result<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
-    #endregion 
+    public static Lazy<Result<A>> Sequence<A>(this Result<Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
+    #endregion
+
+    #region Zip
+    public static Result<(A, B)> Zip<A, B>(this Result<A> @this, Result<B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static Result<C> ZipWith<A, B, C>(this Func<A, B, C> f, Result<A> ma, Result<B> mb) => f.LiftM(ma, mb);
+    public static (Result<A>, Result<B>) UnZip<A, B>(this Result<(A, B)> @this) => (First<A, B>().LiftM(@this), Second<A, B>().LiftM(@this));
+    #endregion
 
     #region Match
     public static void Match<A>(this Result<A> @this, Action<ExceptionDispatchInfo> failed, Action<A> success) {
@@ -201,12 +212,6 @@ namespace Endofunk.FX {
 
     #region DebugPrint
     public static void DebugPrint<A>(this Result<A> @this, string title = "") => Console.WriteLine("{0}{1}{2}", title, title.IsEmpty() ? "" : " ---> ", @this);
-    #endregion
-
-    #region Linq Conformance
-    public static Result<R> Select<A, R>(this Result<A> @this, Func<A, R> fn) => @this.Map(fn);
-    public static Result<R> SelectMany<A, R>(this Result<A> @this, Func<A, Result<R>> fn) => @this.FlatMap(fn);
-    public static Result<R> SelectMany<A, B, R>(this Result<A> @this, Func<A, Result<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToResult()));
     #endregion
 
     #region GetOrElse

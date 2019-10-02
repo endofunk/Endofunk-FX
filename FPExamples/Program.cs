@@ -32,6 +32,7 @@ using static System.Console;
 using System.Reflection;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 using System.Runtime.CompilerServices;
 
@@ -588,6 +589,25 @@ namespace FPExamples {
       var uni2 = Unit();
 
       Console.WriteLine(uni1.CompareTo(uni2));
+      Console.WriteLine(uni1.Equals(uni2));
+
+      var laz1 = Lazy(() => {
+        Console.WriteLine("laz1");
+        return 2;
+      }).Map(x => x + 1);
+      var laz2 = Lazy(() => {
+        Console.WriteLine("laz2");
+        return 3;
+      }).Map(x => x * x);
+
+      var laz3 = Fun<int, int, int>((a, b) => {
+        WriteLine("laz3");
+        return a + b;
+      }).LiftM(laz1, laz2);
+
+      WriteLine("Waiting....., press any key");
+      ReadLine();
+      WriteLine($"laz3 = {laz3.Value}");
 
     }
   }

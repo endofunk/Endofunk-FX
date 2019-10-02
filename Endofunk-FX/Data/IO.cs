@@ -45,6 +45,7 @@ namespace Endofunk.FX {
     public static IO<B> Map<A, B>(this IO<A> @this, Func<A, B> fn) => IO<B>.Of(() => fn(@this.Compute()));
     public static IO<B> Map<A, B>(this Func<A, B> fn, IO<A> @this) => @this.Map(fn);
     public static Func<IO<A>, IO<B>> Map<A, B>(this Func<A, B> fn) => @this => @this.Map(fn);
+    public static IO<R> Select<A, R>(this IO<A> @this, Func<A, R> fn) => @this.Map(fn);
     #endregion
 
     #region Monad
@@ -52,6 +53,8 @@ namespace Endofunk.FX {
     public static IO<B> FlatMap<A, B>(this Func<A, IO<B>> fn, IO<A> @this) => @this.FlatMap(fn);
     public static Func<IO<A>, IO<B>> FlatMap<A, B>(this Func<A, IO<B>> fn) => a => a.FlatMap(fn);
     public static IO<B> Bind<A, B>(this IO<A> @this, Func<A, IO<B>> fn) => @this.FlatMap(fn);
+    public static IO<R> SelectMany<A, R>(this IO<A> @this, Func<A, IO<R>> fn) => @this.FlatMap(fn);
+    public static IO<R> SelectMany<A, B, R>(this IO<A> @this, Func<A, IO<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIO()));
     #endregion
 
     #region Kleisli Composition
@@ -98,6 +101,7 @@ namespace Endofunk.FX {
     public static Reader<R, IO<B>> Traverse<R, A, B>(this IO<A> @this, Func<A, Reader<R, B>> f) => @this.Fold(a => f(a).Map(ToIO));
     public static Either<L, IO<B>> Traverse<L, A, B>(this IO<A> @this, Func<A, Either<L, B>> f) => @this.Fold(a => f(a).Map(ToIO));
     public static Validation<L, IO<B>> Traverse<L, A, B>(this IO<A> @this, Func<A, Validation<L, B>> f) => @this.Fold(a => f(a).Map(ToIO));
+    public static Lazy<IO<B>> Traverse<A, B>(this IO<A> @this, Func<A, Lazy<B>> f) => @this.Fold(a => f(a).Map(ToIO));
     #endregion
 
     #region Sequence
@@ -108,12 +112,13 @@ namespace Endofunk.FX {
     public static Reader<R, IO<A>> Sequence<R, A>(IO<Reader<R, A>> @this) => @this.Traverse(Id<Reader<R, A>>());
     public static Either<L, IO<A>> Sequence<L, A>(IO<Either<L, A>> @this) => @this.Traverse(Id<Either<L, A>>());
     public static Validation<L, IO<A>> Sequence<L, A>(IO<Validation<L, A>> @this) => @this.Traverse(Id<Validation<L, A>>());
-    #endregion 
+    public static Lazy<IO<A>> Sequence<A>(IO<Lazy<A>> @this) => @this.Traverse(Id<Lazy<A>>());
+    #endregion
 
-    #region Linq Conformance
-    public static IO<R> Select<A, R>(this IO<A> @this, Func<A, R> fn) => @this.Map(fn);
-    public static IO<R> SelectMany<A, R>(this IO<A> @this, Func<A, IO<R>> fn) => @this.FlatMap(fn);
-    public static IO<R> SelectMany<A, B, R>(this IO<A> @this, Func<A, IO<B>> fn, Func<A, B, R> select) => @this.FlatMap(a => fn(a).FlatMap(b => select(a, b).ToIO()));
+    #region Zip
+    public static IO<(A, B)> Zip<A, B>(this IO<A> @this, IO<B> other) => Tuple<A, B>().ZipWith(@this, other);
+    public static IO<C> ZipWith<A, B, C>(this Func<A, B, C> f, IO<A> ma, IO<B> mb) => f.LiftM(ma, mb);
+    public static (IO<A>, IO<B>) UnZip<A, B>(this IO<(A, B)> @this) => (First<A, B>().LiftM(@this), Second<A, B>().LiftM(@this));
     #endregion
 
     #region ToIO
